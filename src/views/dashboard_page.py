@@ -41,9 +41,27 @@ class DashboardPage:
         role_label, role_fg, role_bg = ROLE_STYLES.get(role, ("?", TEXT_SLATE400, GLASS_BG))
         initial = user.name.firstname[:1].upper()
 
+        back_button = ft.Container()
+        if self._on_back is not None:
+            back_button = ft.TextButton(
+                content=ft.Row(
+                    [
+                        ft.Icon(ft.Icons.ARROW_BACK, size=18),
+                        ft.Text("Catalogo", size=14),
+                    ],
+                    spacing=4,
+                ),
+                on_click=lambda _: self._on_back(),
+                style=ft.ButtonStyle(
+                    color=TEXT_SLATE400,
+                    padding=ft.Padding(left=4, top=4, right=8, bottom=4),
+                ),
+            )
+
         header = ft.Container(
             content=ft.Row(
                 [
+                    back_button,
                     ft.Text("Mi Perfil", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
                     ft.TextButton(
                         "Salir",
