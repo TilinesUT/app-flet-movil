@@ -1,36 +1,40 @@
+"""Vista de inicio del usuario autenticado (Mi Perfil).
+
+Muestra la identidad, el rol segun el codigo del usuario y sus permisos,
+con enlaces para ir al catalogo o cerrar sesion.
+"""
+
 from __future__ import annotations
 
 import flet as ft
 
+import src.config as config
 from src.controllers.auth_controller import AuthController
 from src.controllers.user_controller import UserController
 from src.models import Role
+from src.views.widgets import (
+    avatar_codigo,
+    boton_primario,
+    boton_secundario,
+    fila_dato,
+    insignia_rol,
+)
 
-
-BG_DARK = "#0f172a"
-BG_DARK_SECOND = "#1e293b"
-GLASS_BG = ft.Colors.with_opacity(0.1, ft.Colors.WHITE)
-GLASS_BORDER = ft.Colors.with_opacity(0.1, ft.Colors.WHITE)
-TEXT_SLATE300 = "#cbd5e1"
-TEXT_SLATE400 = "#94a3b8"
-TEXT_SLATE500 = "#64748b"
-GRADIENT_START = "#3b82f6"
-GRADIENT_END = "#4f46e5"
-
-ROLE_STYLES = {
-    Role.ADMIN: ("Administrador", "#ef4444", "#fef2f2"),
-    Role.AUDITOR: ("Auditor", "#d97706", "#fffbeb"),
-    Role.CLIENT: ("Cliente", "#16a34a", "#f0fdf4"),
-}
+BORDE_SUAVE = ft.border.Border.all(width=1, color=config.BORDE)
 
 
 class DashboardPage:
-    def __init__(self, page: ft.Page, on_logout: callable):
-        self._page = page
-        self._on_logout = on_logout
-        self._auth = AuthController()
-        self._uc = UserController()
+    """Pantalla del perfil: identidad, datos y permisos del usuario."""
 
+    def __init__(self, page: ft.Page, on_logout, on_catalog, on_admin=None) -> None:
+        self._page = page
+        self._on_logout = on_logout       # callback de cerrar sesion
+        self._on_catalog = on_catalog     # callback de ir al catalogo
+        self._on_admin = on_admin         # callback del panel admin (solo admin)
+        self._auth = AuthController()
+        self._usuario = UserController()
+
+<<<<<<< HEAD
     def build(self) -> ft.Control:
         user = self._auth.current_user
         role = self._auth.current_role
@@ -81,140 +85,191 @@ class DashboardPage:
         )
 
         profile_card = ft.Container(
+=======
+    # ------------------------------------------------------------------
+    # Utilidades de maquetacion
+    # ------------------------------------------------------------------
+    def _tarjeta(self, titulo: str, icono: str, hijos: list[ft.Control]) -> ft.Container:
+        """Tarjeta con titulo (icono + texto) y contenido."""
+        return ft.Container(
+>>>>>>> julio
             content=ft.Column(
-                [
-                    ft.Container(
-                        content=ft.Text(initial, size=32, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                        width=80,
-                        height=80,
-                        border_radius=40,
-                        gradient=ft.LinearGradient(
-                            begin=ft.Alignment.TOP_LEFT,
-                            end=ft.Alignment.BOTTOM_RIGHT,
-                            colors=[GRADIENT_START, GRADIENT_END],
-                        ),
-                        alignment=ft.Alignment.CENTER,
-                        shadow=ft.BoxShadow(
-                            spread_radius=0,
-                            blur_radius=16,
-                            color=ft.Colors.with_opacity(0.3, GRADIENT_END),
-                        ),
-                    ),
-                    ft.Container(height=16),
-                    ft.Text(full_name, size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, text_align=ft.TextAlign.CENTER),
-                    ft.Text(f"@{user.username}", size=13, color=TEXT_SLATE400, text_align=ft.TextAlign.CENTER),
-                    ft.Container(height=8),
-                    ft.Container(
-                        content=ft.Text(role_label, size=11, weight=ft.FontWeight.W_700, color=role_fg),
-                        padding=ft.Padding(left=12, top=4, right=12, bottom=4),
-                        border_radius=20,
-                        bgcolor=role_bg,
-                    ),
-                ],
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                alignment=ft.MainAxisAlignment.CENTER,
-            ),
-            padding=ft.Padding(left=24, top=24, right=24, bottom=24),
-            border_radius=16,
-            bgcolor=GLASS_BG,
-            border=ft.Border(left=ft.BorderSide(1, GLASS_BORDER), top=ft.BorderSide(1, GLASS_BORDER), right=ft.BorderSide(1, GLASS_BORDER), bottom=ft.BorderSide(1, GLASS_BORDER)),
-            margin=ft.Margin(left=0, top=0, right=0, bottom=16),
-        )
-
-        personal_card = self._build_section(
-            "INFORMACION PERSONAL",
-            [
-                self._info_row(ft.Icons.EMAIL_OUTLINED, "Email", user.email),
-                self._info_row(ft.Icons.PHONE_OUTLINED, "Telefono", user.phone),
-            ],
-        )
-
-        address_card = self._build_section(
-            "DIRECCION",
-            [
-                self._info_row(ft.Icons.MAP_OUTLINED, "Calle", f"{user.address.street} {user.address.number}"),
-                self._info_row(ft.Icons.LOCATION_CITY_OUTLINED, "Ciudad", user.address.city),
-                self._info_row(ft.Icons.BOOKMARK_OUTLINED, "Codigo Postal", user.address.zipcode),
-            ],
-        )
-
-        geo_card = self._build_section(
-            "GEOLOCALIZACION",
-            [
-                self._info_row(ft.Icons.LOCATION_ON_OUTLINED, "Latitud", user.address.geolocation.lat),
-                self._info_row(ft.Icons.LOCATION_ON_OUTLINED, "Longitud", user.address.geolocation.long),
-            ],
-        )
-
-        content = ft.Column(
-            [
-                header,
-                ft.Container(
-                    content=ft.Column(
-                        [
-                            profile_card,
-                            personal_card,
-                            address_card,
-                            geo_card,
+                controls=[
+                    ft.Row(
+                        controls=[
+                            ft.Icon(icono, size=18, color=config.NARANJA),
+                            ft.Text(
+                                titulo.upper(),
+                                size=12,
+                                weight=ft.FontWeight.BOLD,
+                                color=config.TEXTO_SECUNDARIO,
+                            ),
                         ],
-                        spacing=0,
+                        spacing=8,
                     ),
-                    padding=ft.Padding(left=16, top=16, right=16, bottom=16),
-                    expand=True,
-                ),
-            ],
-            spacing=0,
-            expand=True,
-        )
-
-        return ft.Container(
-            content=content,
-            expand=True,
-            gradient=ft.LinearGradient(
-                begin=ft.Alignment.TOP_LEFT,
-                end=ft.Alignment.BOTTOM_RIGHT,
-                colors=[BG_DARK, BG_DARK_SECOND],
+                    *hijos,
+                ],
+                spacing=12,
             ),
+            padding=ft.Padding(left=16, top=16, right=16, bottom=16),
+            bgcolor=config.SUPERFICIE,
+            border_radius=ft.BorderRadius.all(14),
+            border=BORDE_SUAVE,
         )
 
-    def _build_section(self, title: str, children: list[ft.Control]) -> ft.Control:
-        return ft.Container(
+    def build(self) -> ft.Container:
+        """Construye el perfil del usuario actualmente en sesion."""
+        usuario = self._auth.current_user
+        rol = self._auth.current_role
+
+        if usuario is None or rol is None:
+            # Sin sesion activa: pantalla vacia de fondo negro.
+            return ft.Container(expand=True, bgcolor=config.NEGRO)
+
+        nombre = self._usuario.get_full_name(usuario)
+        etiqueta_rol = self._usuario.get_role_label(rol)
+        color_rol = self._usuario.get_role_color(rol)
+        permisos = self._usuario.get_permissions(rol)
+
+        # Cabecera de la pagina.
+        cabecera = ft.Row(
+            controls=[
+                ft.Column(
+                    controls=[
+                        ft.Text(
+                            "MI PERFIL",
+                            size=11,
+                            weight=ft.FontWeight.BOLD,
+                            color=config.TEXTO_ATENUADO,
+                        ),
+                        ft.Text("Bienvenido", size=22, weight=ft.FontWeight.BOLD, color=config.TEXTO_PRIMARIO),
+                    ],
+                    spacing=0,
+                ),
+                ft.Icon(ft.Icons.FAVORITE_BORDER, size=22, color=config.NARANJA_SUAVE),
+            ],
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        )
+
+        # Tarjeta de identidad: avatar con codigo + nombre + insignia de rol.
+        identidad = ft.Container(
             content=ft.Column(
-                [
-                    ft.Text(
-                        title,
-                        size=11,
-                        weight=ft.FontWeight.W_700,
-                        color=TEXT_SLATE300,
-                    ),
-                    ft.Container(height=12),
-                    *children,
+                controls=[
+                    avatar_codigo(usuario.id),
+                    ft.Text(nombre, size=20, weight=ft.FontWeight.BOLD, color=config.TEXTO_PRIMARIO),
+                    ft.Text(usuario.email, size=13, color=config.TEXTO_SECUNDARIO),
+                    insignia_rol(etiqueta_rol, color_rol),
                 ],
                 spacing=10,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             ),
-            padding=ft.Padding(left=20, top=20, right=20, bottom=20),
-            border_radius=16,
-            bgcolor=GLASS_BG,
-            border=ft.Border(left=ft.BorderSide(1, GLASS_BORDER), top=ft.BorderSide(1, GLASS_BORDER), right=ft.BorderSide(1, GLASS_BORDER), bottom=ft.BorderSide(1, GLASS_BORDER)),
-            margin=ft.Margin(left=0, top=0, right=0, bottom=12),
+            padding=ft.Padding.all(20),
+            bgcolor=config.SUPERFICIE,
+            border_radius=ft.BorderRadius.all(14),
+            border=BORDE_SUAVE,
         )
 
-    def _info_row(self, icon: ft.IconName, label: str, value: str) -> ft.Control:
-        return ft.Row(
+        # Datos principales del usuario.
+        datos = self._tarjeta(
+            "Datos del usuario",
+            ft.Icons.PERSON,
             [
-                ft.Icon(icon, size=18, color=TEXT_SLATE500),
-                ft.Column(
-                    [
-                        ft.Text(label, size=11, color=TEXT_SLATE500),
-                        ft.Text(value, size=13, color=ft.Colors.WHITE, weight=ft.FontWeight.W_500, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
-                    ],
-                    spacing=1,
-                    expand=True,
-                ),
+                fila_dato(ft.Icons.MAIL, "Correo", usuario.email),
+                fila_dato(ft.Icons.PERSON, "Usuario", usuario.username),
+                fila_dato(ft.Icons.PHONE, "Telefono", usuario.phone),
+                fila_dato(ft.Icons.PLACE, "Direccion", self._usuario.get_full_address(usuario)),
+                fila_dato(ft.Icons.LOCATION_CITY, "Ciudad", usuario.address.city),
             ],
-            vertical_alignment=ft.CrossAxisAlignment.START,
         )
 
-    def _handle_logout(self) -> None:
-        self._auth.logout()
-        self._on_logout()
+        # Permisos asociados al rol del usuario.
+        permiso_icono = ft.Icon(getattr(ft.Icons, permisos["icono"]), size=20, color=config.NEGRO)
+        permisos_card = self._tarjeta(
+            "Permisos",
+            ft.Icons.SHIELD,
+            [
+                ft.Row(
+                    controls=[
+                        ft.Container(
+                            content=permiso_icono,
+                            width=40,
+                            height=40,
+                            alignment=ft.Alignment.CENTER,
+                            bgcolor=color_rol,
+                            border_radius=ft.BorderRadius.all(12),
+                        ),
+                        ft.Column(
+                            controls=[
+                                ft.Text(permisos["titulo"], size=14, weight=ft.FontWeight.BOLD, color=config.TEXTO_PRIMARIO),
+                                ft.Text(permisos["detalle"], size=12, color=config.TEXTO_SECUNDARIO),
+                            ],
+                            spacing=3,
+                            expand=True,
+                        ),
+                    ],
+                    spacing=12,
+                )
+            ],
+        )
+
+        # Acciones: si es administrador, acceso destacado al panel de admin.
+        es_admin = rol is Role.ADMIN
+        boton_admin = None
+        if es_admin and self._on_admin is not None:
+            boton_admin = boton_primario(
+                "Gestionar articulos",
+                self._on_admin,
+                ft.Icons.ADMIN_PANEL_SETTINGS,
+            )
+        acciones = ft.Row(
+            controls=[
+                boton_secundario("Cerrar sesion", self._on_logout, ft.Icons.LOGOUT),
+                boton_primario("Ver catalogo", self._on_catalog, ft.Icons.STORE),
+            ],
+            spacing=10,
+        )
+        bloque_acciones = [boton_admin, acciones] if boton_admin is not None else [acciones]
+
+        contenido = ft.ListView(
+            controls=[cabecera, identidad, datos, permisos_card, *bloque_acciones],
+            spacing=16,
+            padding=ft.Padding.all(16),
+            expand=True,
+        )
+
+        # Barra inferior: la pestana "Admin" solo aparece para administradores.
+        destinos = [
+            ft.NavigationBarDestination(icon=ft.Icons.PERSON, label="Mi perfil"),
+            ft.NavigationBarDestination(icon=ft.Icons.STORE, label="Catalogo"),
+        ]
+        if es_admin:
+            destinos.append(
+                ft.NavigationBarDestination(icon=ft.Icons.ADMIN_PANEL_SETTINGS, label="Admin")
+            )
+        navegacion = ft.NavigationBar(
+            destinations=destinos,
+            selected_index=0,
+            on_change=self._on_navegacion,
+            bgcolor=config.CARBON,
+        )
+
+        return ft.Container(
+            expand=True,
+            gradient=ft.LinearGradient(
+                begin=ft.Alignment.TOP_CENTER,
+                end=ft.Alignment.BOTTOM_CENTER,
+                colors=[config.NEGRO, config.CARBON, config.NEGRO],
+            ),
+            content=ft.Column(
+                controls=[contenido, navegacion],
+                spacing=0,
+                expand=True,
+            ),
+        )
+
+    def _on_navegacion(self, e) -> None:
+        """Navega segun la pestana elegida en la barra inferior."""
+        if e.control.selected_index == 1:
+            self._on_catalog()
+        elif e.control.selected_index == 2 and self._on_admin is not None:
+            self._on_admin()
