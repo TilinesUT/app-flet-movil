@@ -10,7 +10,6 @@ from src.controllers.auth_controller import AuthController
 from src.views.login_page import LoginPage
 from src.views.dashboard_page import DashboardPage
 
-
 def main(page: ft.Page) -> None:
     page.title = "Proyecto Movil"
     page.bgcolor = "#0f172a"
