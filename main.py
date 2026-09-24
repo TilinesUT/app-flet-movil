@@ -22,7 +22,6 @@ from src.views.login_page import LoginPage
 
 class App:
     """Controlador raiz: configura la pagina y cambia entre vistas."""
-
     def __init__(self, page: ft.Page) -> None:
         self.page = page
         self.auth = AuthController()
