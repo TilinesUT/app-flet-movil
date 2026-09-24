@@ -1,0 +1,16 @@
+[project]
+name = "proyecto-movil"
+version = "1.0.0"
+description = "Aplicacion movil Flet con login y dashboard (usuarios desde FakeStoreAPI)."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "flet",
+    "httpx",
+]
+
+[tool.flet]
+org = "com.fleet"
+product = "Proyecto Movil"
+build_number = 1
+copyright = "Copyright (c) 2026 Proyecto Movil"
