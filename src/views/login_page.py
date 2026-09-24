@@ -1,211 +1,198 @@
+"""Vista de inicio de sesion (tema naranja/negro).
+
+Permite autenticarse contra la FakeStore API de forma asincrona y
+distingue entre credenciales invalidas y errores de conexion.
+"""
+
 from __future__ import annotations
+
+import asyncio
 
 import flet as ft
 
+import src.config as config
 from src.controllers.auth_controller import AuthController
+from src.views.widgets import boton_primario, campo_texto
 
-
-BG_DARK = "#0f172a"
-BG_DARK_SECOND = "#1e293b"
-GLASS_BG = ft.Colors.with_opacity(0.1, ft.Colors.WHITE)
-GLASS_BORDER = ft.Colors.with_opacity(0.1, ft.Colors.WHITE)
-TEXT_SLATE300 = "#cbd5e1"
-TEXT_SLATE400 = "#94a3b8"
-TEXT_SLATE500 = "#64748b"
-GRADIENT_START = "#3b82f6"
-GRADIENT_END = "#4f46e5"
+# Cuentas de prueba de la FakeStore API (codigo = id del usuario).
+_CUENTAS_DEMO = [
+    ("johnd", "1"),
+    ("mor_2314", "2"),
+    ("kevinryan", "3"),
+    ("donero", "4"),
+]
 
 
 class LoginPage:
-    def __init__(self, page: ft.Page, on_success: callable):
+    """Pantalla de login con los campos, el boton y los mensajes de error."""
+
+    def __init__(self, page: ft.Page, on_success) -> None:
         self._page = page
-        self._on_success = on_success
+        self._on_success = on_success          # callback al autenticarse
         self._auth = AuthController()
-        self._error_text: ft.Text | None = None
-        self._progress: ft.ProgressRing | None = None
-        self._btn: ft.ElevatedButton | None = None
+        self._campo_usuario = None
+        self._campo_contrasena = None
+        self._btn_ingresar = None
+        self._error_texto = None
 
-    def build(self) -> ft.Control:
-        self._error_text = ft.Text(
+    def build(self) -> ft.Container:
+        """Construye y devuelve la vista completa del login."""
+        self._campo_usuario = campo_texto(
+            "Usuario",
+            hint="Tu codigo de acceso",
+            icono=ft.Icons.PERSON,
+        )
+        self._campo_contrasena = campo_texto(
+            "Contrasena",
+            hint="Tu clave secreta",
+            icono=ft.Icons.LOCK,
+            contrasena=True,
+            contrasena_revelable=True,
+        )
+        self._campo_contrasena.on_submit = self._on_login
+
+        self._error_texto = ft.Text(
             "",
-            color="#fca5a5",
             size=13,
+            color=config.ERROR,
             text_align=ft.TextAlign.CENTER,
-            visible=False,
         )
 
-        self._progress = ft.ProgressRing(
-            width=20,
-            height=20,
-            stroke_width=2,
-            color=ft.Colors.WHITE,
-            visible=False,
+        self._btn_ingresar = boton_primario(
+            "Ingresar",
+            self._on_login,
+            icono=ft.Icons.LOGIN,
         )
 
-        username_field = ft.TextField(
-            hint_text="Ingresa tu usuario",
-            hint_style=ft.TextStyle(color=TEXT_SLATE500),
-            label="Usuario",
-            label_style=ft.TextStyle(color=TEXT_SLATE300, size=13),
-            border_color=GLASS_BORDER,
-            focused_border_color="#3b82f6",
-            border_radius=12,
-            bgcolor=ft.Colors.with_opacity(0.05, ft.Colors.WHITE),
-            color=ft.Colors.WHITE,
-            text_size=15,
-            content_padding=ft.Padding(left=16, top=14, right=16, bottom=14),
-            cursor_color="#3b82f6",
+        # Logo: circulo naranja con el icono de la tienda.
+        logo = ft.Container(
+            content=ft.Icon(ft.Icons.STORE, size=44, color=config.NEGRO),
+            width=84,
+            height=84,
+            alignment=ft.Alignment.CENTER,
+            bgcolor=config.NARANJA,
+            border_radius=ft.BorderRadius.all(26),
         )
 
-        password_field = ft.TextField(
-            hint_text="Ingresa tu contrasena",
-            hint_style=ft.TextStyle(color=TEXT_SLATE500),
-            label="Contrasena",
-            label_style=ft.TextStyle(color=TEXT_SLATE300, size=13),
-            password=True,
-            can_reveal_password=True,
-            border_color=GLASS_BORDER,
-            focused_border_color="#3b82f6",
-            border_radius=12,
-            bgcolor=ft.Colors.with_opacity(0.05, ft.Colors.WHITE),
-            color=ft.Colors.WHITE,
-            text_size=15,
-            content_padding=ft.Padding(left=16, top=14, right=16, bottom=14),
-            cursor_color="#3b82f6",
+        titulo = ft.Text(
+            "TIENDA NARANJA",
+            size=26,
+            weight=ft.FontWeight.W_900,
+            color=config.TEXTO_PRIMARIO,
+        )
+        subtitulo = ft.Text(
+            "Inicia sesion para continuar",
+            size=14,
+            color=config.TEXTO_SECUNDARIO,
         )
 
-        self._btn = ft.ElevatedButton(
-            content=ft.Row(
-                [
-                    self._progress,
-                    ft.Text("Iniciar sesion", size=15, weight=ft.FontWeight.W_600),
+        # Lista de cuentas de prueba para facilitar el ingreso.
+        demo_superior = ft.Text(
+            "Cuentas de prueba",
+            size=12,
+            weight=ft.FontWeight.BOLD,
+            color=config.TEXTO_SECUNDARIO,
+        )
+        pie_demostrativo = ft.Column(
+            controls=[
+                ft.Row(
+                    controls=[
+                        ft.Icon(ft.Icons.HELP_OUTLINE, size=14, color=config.NARANJA_SUAVE),
+                        demo_superior,
+                    ],
+                    spacing=6,
+                ),
+                *[
+                    ft.Row(
+                        controls=[
+                            ft.Text(
+                                f"  {usuario}",
+                                size=12,
+                                color=config.TEXTO_PRIMARIO,
+                                weight=ft.FontWeight.W_500,
+                            ),
+                            ft.Text(
+                                f"(rol codigo {codigo})",
+                                size=12,
+                                color=config.TEXTO_ATENUADO,
+                            ),
+                        ],
+                        spacing=4,
+                    )
+                    for usuario, codigo in _CUENTAS_DEMO
                 ],
-                alignment=ft.MainAxisAlignment.CENTER,
-            ),
-            style=ft.ButtonStyle(
-                bgcolor=GRADIENT_END,
-                color=ft.Colors.WHITE,
-                shape=ft.RoundedRectangleBorder(radius=12),
-                padding=ft.Padding(left=0, top=16, right=0, bottom=16),
-            ),
-            on_click=lambda _: self._handle_login(username_field.value or "", password_field.value or ""),
+            ],
+            spacing=4,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
-        login_card = ft.Container(
-            content=ft.Column(
-                [
-                    self._error_text,
-                    ft.Container(
-                        content=ft.Column(
-                            [
-                                username_field,
-                                ft.Container(height=8),
-                                password_field,
-                                ft.Container(height=12),
-                                self._btn,
-                            ],
-                            spacing=0,
-                        ),
-                        padding=ft.Padding(left=24, top=24, right=24, bottom=24),
-                        border_radius=16,
-                        bgcolor=GLASS_BG,
-                        border=ft.Border(left=ft.BorderSide(1, GLASS_BORDER), top=ft.BorderSide(1, GLASS_BORDER), right=ft.BorderSide(1, GLASS_BORDER), bottom=ft.BorderSide(1, GLASS_BORDER)),
-                    ),
-                ],
-                spacing=16,
-            ),
-        )
-
-        header = ft.Container(
-            content=ft.Column(
-                [
-                    ft.Container(
-                        content=ft.Icon(
-                            ft.Icons.LOCK_ROUNDED,
-                            size=40,
-                            color=ft.Colors.WHITE,
-                        ),
-                        width=80,
-                        height=80,
-                        border_radius=16,
-                        gradient=ft.LinearGradient(
-                            begin=ft.Alignment.TOP_LEFT,
-                            end=ft.Alignment.BOTTOM_RIGHT,
-                            colors=[GRADIENT_START, GRADIENT_END],
-                        ),
-                        alignment=ft.Alignment.CENTER,
-                        shadow=ft.BoxShadow(
-                            spread_radius=0,
-                            blur_radius=16,
-                            color=ft.Colors.with_opacity(0.3, GRADIENT_END),
-                        ),
-                    ),
-                    ft.Container(height=16),
-                    ft.Text(
-                        "Bienvenido",
-                        size=24,
-                        weight=ft.FontWeight.BOLD,
-                        color=ft.Colors.WHITE,
-                        text_align=ft.TextAlign.CENTER,
-                    ),
-                    ft.Text(
-                        "Inicia sesion para continuar",
-                        size=13,
-                        color=TEXT_SLATE400,
-                        text_align=ft.TextAlign.CENTER,
-                    ),
-                ],
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                alignment=ft.MainAxisAlignment.CENTER,
-            ),
-            margin=ft.Margin(left=0, top=0, right=0, bottom=32),
-        )
-
-        credentials_hint = ft.Container(
-            content=ft.Text(
-                "Credenciales: mor_2314 / 83r5^_",
-                size=11,
-                color=TEXT_SLATE500,
-                text_align=ft.TextAlign.CENTER,
-            ),
-            margin=ft.Margin(left=0, top=24, right=0, bottom=0),
+        formulario = ft.Column(
+            controls=[
+                logo,
+                titulo,
+                subtitulo,
+                ft.Container(height=14),
+                self._campo_usuario,
+                self._campo_contrasena,
+                self._error_texto,
+                self._btn_ingresar,
+                ft.Container(height=14),
+                pie_demostrativo,
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            scroll=ft.ScrollMode.AUTO,
+            spacing=12,
         )
 
         return ft.Container(
-            content=ft.Column(
-                [
-                    ft.Container(expand=True),
-                    header,
-                    login_card,
-                    credentials_hint,
-                    ft.Container(expand=True),
-                ],
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            ),
             expand=True,
             gradient=ft.LinearGradient(
-                begin=ft.Alignment.TOP_LEFT,
-                end=ft.Alignment.BOTTOM_RIGHT,
-                colors=[BG_DARK, BG_DARK_SECOND],
+                begin=ft.Alignment.TOP_CENTER,
+                end=ft.Alignment.BOTTOM_CENTER,
+                colors=[config.NEGRO, config.CARBON, config.NEGRO],
             ),
-            padding=ft.Padding(left=24, top=0, right=24, bottom=0),
+            padding=ft.Padding(left=28, top=40, right=28, bottom=28),
+            alignment=ft.Alignment.CENTER,
+            content=formulario,
         )
 
-    def _handle_login(self, username: str, password: str) -> None:
-        self._error_text.visible = False
-        self._progress.visible = True
-        self._btn.content.controls[1].value = "Iniciando sesion..."
-        self._btn.disabled = True
+    # ------------------------------------------------------------------
+    # Manejo del login (asincrono para no bloquear la interfaz)
+    # ------------------------------------------------------------------
+    async def _on_login(self, e) -> None:
+        """Valida los campos y autentica al usuario en la API."""
+        usuario = (self._campo_usuario.value or "").strip()
+        contrasena = self._campo_contrasena.value or ""
+
+        # Datos vacios: mensaje amigable sin llamar a la API.
+        if not usuario or not contrasena:
+            self._error_texto.value = "Ingresa el usuario y la contrasena."
+            self._page.update()
+            return
+
+        # Deshabilita el boton mientras se procesa el login.
+        self._btn_ingresar.disabled = True
+        self._error_texto.value = ""
         self._page.update()
 
         try:
-            self._auth.login(username, password)
+            # La llamada de red se ejecuta en otro hilo (asyncio.to_thread)
+            # para no congelar la interfaz mientras se espera la respuesta.
+            await asyncio.to_thread(self._auth.login, usuario, contrasena)
+        except ValueError:
+            # La API respondio 400/401 (credenciales invalidas).
+            self._error_texto.value = (
+                "Credenciales incorrectas. Verifica tu usuario y contrasena."
+            )
+        except Exception:
+            # Fallo de red, DNS, timeout, servidor caido, etc.
+            self._error_texto.value = (
+                "Error de conexion. Revisa tu internet e intenta de nuevo."
+            )
+        else:
+            # Exito: se pasa al siguiente modulo (Home del usuario).
             self._on_success()
-        except Exception as e:
-            self._error_text.value = str(e)
-            self._error_text.visible = True
+            return
         finally:
-            self._progress.visible = False
-            self._btn.content.controls[1].value = "Iniciar sesion"
-            self._btn.disabled = False
+            self._btn_ingresar.disabled = False
             self._page.update()
