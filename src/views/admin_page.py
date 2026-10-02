@@ -15,7 +15,7 @@ import src.config as config
 from src.controllers.admin_controller import AdminController
 from src.controllers.auth_controller import AuthController
 from src.models.product import Calificacion, Producto
-from src.views.widgets import boton_primario, campo_texto
+from src.views.widgets import boton_primario, campo_texto, dialogo_mensaje
 
 BORDE_SUAVE = ft.border.Border.all(width=1, color=config.BORDE)
 
@@ -102,7 +102,7 @@ class AdminPage:
 
         boton_nuevo = boton_primario(
             "Nuevo articulo",
-            self._abrir_formulario,
+            lambda e: self._abrir_formulario(),
             icono=ft.Icons.ADD,
             expand=False,
         )
@@ -550,13 +550,13 @@ class AdminPage:
         # Guardar en un hilo aparte para no bloquear la interfaz.
         if producto is not None:
             await asyncio.to_thread(self._admin.actualizar_articulo, nuevo, producto.id)
-            mensaje = "Articulo modificado correctamente"
+            titulo_aviso, mensaje = "Articulo modificado", "Los cambios se guardaron correctamente."
         else:
             await asyncio.to_thread(self._admin.crear_articulo, nuevo)
-            mensaje = "Articulo creado correctamente"
+            titulo_aviso, mensaje = "Articulo creado", "El nuevo articulo se agrego al catalogo correctamente."
 
         self._cerrar(dialogo)
-        self._mostrar_snack(mensaje)
+        dialogo_mensaje(self._page, titulo_aviso, mensaje)
         await self._cargar()
 
     # ------------------------------------------------------------------
@@ -591,7 +591,7 @@ class AdminPage:
         """Ejecuta la eliminacion y refresca el panel."""
         await asyncio.to_thread(self._admin.eliminar_articulo, producto.id)
         self._cerrar(dialogo)
-        self._mostrar_snack("Articulo eliminado")
+        dialogo_mensaje(self._page, "Articulo eliminado", "El articulo se elimino correctamente.")
         await self._cargar()
 
     # ------------------------------------------------------------------
@@ -600,15 +600,4 @@ class AdminPage:
     def _cerrar(self, dialogo: ft.AlertDialog) -> None:
         """Cierra un dialogo y refresca la pagina."""
         dialogo.open = False
-        self._page.update()
-
-    def _mostrar_snack(self, mensaje: str) -> None:
-        """Muestra una notificacion breve al usuario."""
-        snack = ft.SnackBar(
-            content=ft.Text(mensaje, color=config.TEXTO_PRIMARIO),
-            bgcolor=config.SUPERFICIE,
-            behavior=ft.SnackBarBehavior.FLOATING,
-        )
-        self._page.overlay.append(snack)
-        snack.open = True
         self._page.update()

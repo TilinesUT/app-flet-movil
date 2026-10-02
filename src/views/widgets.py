@@ -57,6 +57,46 @@ def boton_secundario(
     )
 
 
+def dialogo_mensaje(
+    page,
+    titulo: str,
+    mensaje: str,
+    boton_texto: str = "Volver a la aplicacion",
+) -> None:
+    """Dialogo de aviso/exito con un boton para regresar a la aplicacion.
+
+    Se usa al crear, editar o eliminar articulos: muestra un mensaje
+    acorde a la accion y permite volver a la app con un clic.
+    """
+    def cerrar(e) -> None:
+        dialogo.open = False
+        page.update()
+
+    dialogo = ft.AlertDialog(
+        modal=True,
+        title=ft.Text(titulo, color=config.TEXTO_PRIMARIO),
+        bgcolor=config.GRAFITO,
+        content=ft.Container(
+            width=320,
+            content=ft.Column(
+                controls=[
+                    ft.Icon(ft.Icons.CHECK_CIRCLE, size=42, color=config.EXITO),
+                    ft.Text(
+                        mensaje,
+                        size=13,
+                        color=config.TEXTO_SECUNDARIO,
+                        text_align=ft.TextAlign.CENTER,
+                    ),
+                ],
+                spacing=12,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            ),
+        ),
+        actions=[boton_primario(boton_texto, cerrar, expand=False)],
+    )
+    page.show_dialog(dialogo)
+
+
 def campo_texto(
     etiqueta: str,
     hint: str = "",

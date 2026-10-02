@@ -34,65 +34,12 @@ class DashboardPage:
         self._auth = AuthController()
         self._usuario = UserController()
 
-<<<<<<< HEAD
-    def build(self) -> ft.Control:
-        user = self._auth.current_user
-        role = self._auth.current_role
-        if user is None or role is None:
-            return ft.Container()
-
-        full_name = self._uc.get_full_name(user)
-        role_label, role_fg, role_bg = ROLE_STYLES.get(role, ("?", TEXT_SLATE400, GLASS_BG))
-        initial = user.name.firstname[:1].upper()
-
-        back_button = ft.Container()
-        if self._on_back is not None:
-            back_button = ft.TextButton(
-                content=ft.Row(
-                    [
-                        ft.Icon(ft.Icons.ARROW_BACK, size=18),
-                        ft.Text("Catalogo", size=14),
-                    ],
-                    spacing=4,
-                ),
-                on_click=lambda _: self._on_back(),
-                style=ft.ButtonStyle(
-                    color=TEXT_SLATE400,
-                    padding=ft.Padding(left=4, top=4, right=8, bottom=4),
-                ),
-            )
-
-        header = ft.Container(
-            content=ft.Row(
-                [
-                    back_button,
-                    ft.Text("Mi Perfil", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                    ft.TextButton(
-                        "Salir",
-                        on_click=lambda _: self._handle_logout(),
-                        style=ft.ButtonStyle(
-                            color=TEXT_SLATE400,
-                            padding=ft.Padding(left=4, top=4, right=4, bottom=4),
-                        ),
-                    ),
-                ],
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            ),
-            padding=ft.Padding(left=16, top=12, right=16, bottom=12),
-            bgcolor=GLASS_BG,
-            border=ft.Border(bottom=ft.BorderSide(1, GLASS_BORDER)),
-        )
-
-        profile_card = ft.Container(
-=======
     # ------------------------------------------------------------------
     # Utilidades de maquetacion
     # ------------------------------------------------------------------
     def _tarjeta(self, titulo: str, icono: str, hijos: list[ft.Control]) -> ft.Container:
         """Tarjeta con titulo (icono + texto) y contenido."""
         return ft.Container(
->>>>>>> julio
             content=ft.Column(
                 controls=[
                     ft.Row(
