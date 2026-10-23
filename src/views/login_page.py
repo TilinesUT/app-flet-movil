@@ -64,9 +64,16 @@ class LoginPage:
             icono=ft.Icons.LOGIN,
         )
 
-        # Logo: circulo naranja con el icono de la tienda.
+        # Logo: imagen personalizada.
         logo = ft.Container(
-            content=ft.Icon(ft.Icons.STORE, size=44, color=config.NEGRO),
+            content=ft.Image(
+                src="assets/logo_tienda_naranja.jpg",
+                width=84,
+                height=84,
+                fit=ft.BoxFit.COVER,
+                border_radius=ft.BorderRadius.all(26),
+                error_content=ft.Icon(ft.Icons.STORE, size=44, color=config.NEGRO),
+            ),
             width=84,
             height=84,
             alignment=ft.Alignment.CENTER,
@@ -75,7 +82,7 @@ class LoginPage:
         )
 
         titulo = ft.Text(
-            "TIENDA NARANJA",
+            "FORGE 3D",
             size=26,
             weight=ft.FontWeight.W_900,
             color=config.TEXTO_PRIMARIO,
