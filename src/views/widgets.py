@@ -201,12 +201,19 @@ def calificacion_estrellas(tasa: float, tamano: float = 14) -> ft.Row:
     return ft.Row(controls=estrellas, spacing=1)
 
 
-def tarjeta_producto(producto: Producto, on_click, on_editar=None) -> ft.Container:
+def tarjeta_producto(
+    producto: Producto,
+    on_click,
+    on_editar=None,
+    on_agregar=None,
+) -> ft.Container:
     """Tarjeta compacta de un producto.
 
     Si se pasa ``on_editar`` se agrega un recuadro de edicion debajo del
-    precio (solo lo muestran quienes pueden editar el catalogo). El recuadro
-    es un control hermano de la zona clicable, asi su clic no abre el detalle.
+    precio (solo lo muestran quienes pueden editar el catalogo). Si se pasa
+    ``on_agregar`` se agrega un boton para sumar el producto al carrito.
+    Ambos son controles hermanos de la zona clicable, asi su clic no abre
+    el detalle.
     """
     imagen = ft.Container(
         content=ft.Image(
@@ -218,7 +225,7 @@ def tarjeta_producto(producto: Producto, on_click, on_editar=None) -> ft.Contain
                 color=config.TEXTO_ATENUADO,
             ),
         ),
-        height=120,
+        height=110,
         bgcolor=config.SUPERFICIE,
         border_radius=ft.BorderRadius.all(10),
         alignment=ft.Alignment.CENTER,
@@ -241,8 +248,23 @@ def tarjeta_producto(producto: Producto, on_click, on_editar=None) -> ft.Contain
         ),
     ]
 
-    if on_editar is None:
-        # Sin recuadro de edicion: toda la tarjeta abre el detalle.
+    boton_agregar = None
+    if on_agregar is not None:
+        boton_agregar = ft.FilledButton(
+            content=ft.Text("Agregar", size=11, weight=ft.FontWeight.BOLD),
+            icon=ft.Icons.ADD_SHOPPING_CART,
+            on_click=on_agregar,
+            bgcolor=config.NARANJA,
+            color=config.NEGRO,
+            height=34,
+            style=ft.ButtonStyle(
+                shape=ft.RoundedRectangleBorder(radius=10),
+                padding=ft.Padding(left=10, top=4, right=10, bottom=4),
+            ),
+        )
+
+    if on_editar is None and boton_agregar is None:
+        # Sin controles extra: toda la tarjeta abre el detalle.
         cuerpo = ft.Column(
             controls=[imagen, *informacion],
             spacing=4,
@@ -258,8 +280,8 @@ def tarjeta_producto(producto: Producto, on_click, on_editar=None) -> ft.Contain
             ink=True,
         )
 
-    # Con recuadro de edicion: la zona superior abre el detalle y el
-    # recuadro inferior edita el articulo (solo editores administradores).
+    # La zona superior abre el detalle; los controles extra (agregar /
+    # editar) son hermanos suyos, por lo que su clic no abre el detalle.
     zona_clicable = ft.Container(
         content=ft.Column(
             controls=[imagen, *informacion],
@@ -270,23 +292,28 @@ def tarjeta_producto(producto: Producto, on_click, on_editar=None) -> ft.Contain
         ink=False,
     )
 
-    recuadro_editar = ft.OutlinedButton(
-        content="EDITAR",
-        icon=ft.Icons.EDIT_OUTLINED,
-        expand=True,
-        on_click=lambda e: on_editar(),
-        style=ft.ButtonStyle(
-            color=config.NARANJA_SUAVE,
-            side=ft.BorderSide(width=1, color=config.NARANJA),
-            shape=ft.RoundedRectangleBorder(radius=10),
-            text_style=ft.TextStyle(size=11, weight=ft.FontWeight.BOLD),
-        ),
-    )
+    controles_extra: list[ft.Control] = []
+    if boton_agregar is not None:
+        controles_extra.append(boton_agregar)
+    if on_editar is not None:
+        recuadro_editar = ft.OutlinedButton(
+            content="EDITAR",
+            icon=ft.Icons.EDIT_OUTLINED,
+            height=34,
+            on_click=lambda e: on_editar(),
+            style=ft.ButtonStyle(
+                color=config.NARANJA_SUAVE,
+                side=ft.BorderSide(width=1, color=config.NARANJA),
+                shape=ft.RoundedRectangleBorder(radius=10),
+                text_style=ft.TextStyle(size=11, weight=ft.FontWeight.BOLD),
+            ),
+        )
+        controles_extra.append(recuadro_editar)
 
     return ft.Container(
         content=ft.Column(
-            controls=[zona_clicable, recuadro_editar],
-            spacing=8,
+            controls=[zona_clicable, *controles_extra],
+            spacing=6,
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
         ),
         padding=ft.Padding.all(10),

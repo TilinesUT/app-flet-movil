@@ -1,7 +1,8 @@
 """Vista del catalogo de productos (FakeStore API).
 
 Carga las categorias y productos de forma asincrona, permite buscar y
-filtrar, y muestra el detalle de cada producto en un dialogo.
+filtrar, muestra el detalle de cada producto en un dialogo y permite
+agregar productos al carrito de compras.
 """
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ import src.config as config
 from src.controllers.admin_controller import AdminController
 from src.controllers.auth_controller import AuthController
 from src.models import Role
+from src.models.cart import Carrito
 from src.models.product import CATEGORIAS_LEGIBLES, Calificacion, Producto
 from src.services.api_service import ApiService
 from src.views.widgets import (
@@ -36,6 +38,7 @@ class CatalogPage:
         self._api = ApiService()
         self._admin = AdminController()       # edicion de articulos
         self._auth = AuthController()
+        self._carrito = Carrito()
         # Solo quienes tienen rol de editor (administradores 1 y 2) editan.
         self._es_editor = self._auth.current_role is Role.ADMIN
         self._productos: list[Producto] = []
@@ -46,6 +49,9 @@ class CatalogPage:
         self._selector_categoria = None
         self._contenido = None
         self._contador = None
+        self._texto_carrito = None
+        self._contenedor_carrito = None
+        self._dialogo_carrito = None
 
     # ------------------------------------------------------------------
     # Construccion de la vista
@@ -94,6 +100,27 @@ class CatalogPage:
             color=config.TEXTO_ATENUADO,
         )
 
+        self._texto_carrito = ft.Text(
+            f"Carrito: 0 articulos | Total: ${0:,.2f}",
+            size=12,
+            color=config.TEXTO_PRIMARIO,
+        )
+        self._contenedor_carrito = ft.Container(
+            content=ft.Row(
+                controls=[
+                    ft.Icon(ft.Icons.SHOPPING_CART, size=18, color=config.NARANJA),
+                    self._texto_carrito,
+                ],
+                spacing=8,
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            ),
+            padding=ft.Padding(left=12, top=8, right=12, bottom=8),
+            bgcolor=config.GRAFITO,
+            border=ft.border.Border.all(width=1, color=config.BORDE),
+            border_radius=12,
+        )
+
         # Los editores (administradores) tambien pueden agregar articulos.
         boton_nuevo = None
         if self._es_editor:
@@ -123,7 +150,12 @@ class CatalogPage:
                     ],
                     spacing=0,
                 ),
-                ft.Icon(ft.Icons.STORE, size=26, color=config.NARANJA),
+                ft.IconButton(
+                    icon=ft.Icons.SHOPPING_CART_OUTLINED,
+                    icon_color=config.NARANJA,
+                    tooltip="Ver carrito",
+                    on_click=self._abrir_carrito,
+                ),
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         )
@@ -148,6 +180,7 @@ class CatalogPage:
         encabezados = ft.Column(
             controls=[
                 cabecera,
+                self._contenedor_carrito,
                 ft.Row(controls=[self._campo_busqueda, boton_recargar], spacing=8),
                 *([boton_nuevo, ft.Container(height=4)] if boton_nuevo else []),
                 self._selector_categoria,
@@ -261,6 +294,20 @@ class CatalogPage:
     # ------------------------------------------------------------------
     # Pintado y filtrado de la cuadricula
     # ------------------------------------------------------------------
+    def _actualizar_barra_carrito(self) -> None:
+        if self._texto_carrito is None:
+            return
+        self._texto_carrito.value = (
+            f"Carrito: {self._carrito.cantidad_total()} articulos | "
+            f"Total: ${self._carrito.total():,.2f}"
+        )
+        if self._page is not None:
+            self._page.update()
+
+    def _agregar_al_carrito(self, producto: Producto) -> None:
+        self._carrito.agregar(producto)
+        self._actualizar_barra_carrito()
+
     def _pintar(self) -> None:
         """Aplica busqueda + categoria y redibuja la cuadricula de productos."""
         texto = self._filtro.lower()
@@ -272,6 +319,7 @@ class CatalogPage:
         ]
 
         self._contador.value = f"{len(filtrados)} producto(s)"
+        self._actualizar_barra_carrito()
 
         if not filtrados:
             estado = self._estado_vacio()
@@ -287,13 +335,14 @@ class CatalogPage:
                             if self._es_editor
                             else None
                         ),
+                        on_agregar=lambda e, prod=p: self._agregar_al_carrito(prod),
                     )
                     for p in filtrados
                 ],
-                runs_count=2,
-                spacing=2,
-                run_spacing=2,
-                child_aspect_ratio=0.9,
+                max_extent=200,
+                spacing=8,
+                run_spacing=8,
+                child_aspect_ratio=0.55,
                 padding=ft.Padding.all(2),
             )
 
@@ -388,9 +437,150 @@ class CatalogPage:
             ),
             actions=[
                 ft.TextButton("Cerrar", on_click=lambda e: self._cerrar(detalle)),
+                boton_primario(
+                    "Agregar al carrito",
+                    lambda e: (self._cerrar(detalle), self._agregar_al_carrito(producto)),
+                    icono=ft.Icons.ADD_SHOPPING_CART,
+                    expand=False,
+                ),
             ],
         )
         self._page.show_dialog(detalle)
+
+    def _abrir_carrito(self, e=None) -> None:
+        items = self._carrito.items()
+        if not items:
+            dialogo_mensaje(self._page, "Carrito vacio", "Aun no hay articulos en el carrito.")
+            return
+
+        lista = []
+        for item in items:
+            lista.append(
+                ft.Container(
+                    content=ft.Row(
+                        controls=[
+                            ft.Container(
+                                content=ft.Image(
+                                    src=item.imagen,
+                                    fit=ft.BoxFit.CONTAIN,
+                                    error_content=ft.Icon(
+                                        ft.Icons.BROKEN_IMAGE_OUTLINED,
+                                        size=24,
+                                        color=config.TEXTO_ATENUADO,
+                                    ),
+                                ),
+                                width=60,
+                                height=60,
+                                bgcolor=config.SUPERFICIE,
+                                border_radius=ft.BorderRadius.all(10),
+                                alignment=ft.Alignment.CENTER,
+                                padding=ft.Padding.all(4),
+                            ),
+                            ft.Column(
+                                controls=[
+                                    ft.Text(item.titulo, size=12, color=config.TEXTO_PRIMARIO, max_lines=2, overflow=ft.TextOverflow.ELLIPSIS, expand=True),
+                                    ft.Text(f"${item.precio:,.2f} x {item.cantidad}", size=12, color=config.NARANJA),
+                                ],
+                                spacing=2,
+                                expand=True,
+                            ),
+                            ft.Column(
+                                controls=[
+                                    ft.IconButton(
+                                        icon=ft.Icons.ADD_CIRCLE_OUTLINE,
+                                        icon_color=config.NARANJA_SUAVE,
+                                        icon_size=18,
+                                        on_click=lambda e, pid=item.producto_id: self._carrito_add(pid),
+                                    ),
+                                    ft.IconButton(
+                                        icon=ft.Icons.REMOVE_CIRCLE_OUTLINE,
+                                        icon_color=config.TEXTO_ATENUADO,
+                                        icon_size=18,
+                                        on_click=lambda e, pid=item.producto_id: self._carrito_remove(pid),
+                                    ),
+                                    ft.IconButton(
+                                        icon=ft.Icons.DELETE_OUTLINE,
+                                        icon_color=config.ERROR,
+                                        icon_size=18,
+                                        on_click=lambda e, pid=item.producto_id: self._carrito_del(pid),
+                                    ),
+                                ],
+                                spacing=0,
+                            ),
+                        ],
+                        spacing=10,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    ),
+                    padding=ft.Padding.all(8),
+                    bgcolor=config.SUPERFICIE,
+                    border=ft.border.Border.all(width=1, color=config.BORDE),
+                    border_radius=12,
+                )
+            )
+
+        dialogo = ft.AlertDialog(
+            modal=True,
+            bgcolor=config.GRAFITO,
+            title=ft.Text("Carrito de compras", color=config.TEXTO_PRIMARIO),
+            content=ft.Container(
+                width=360,
+                content=ft.Column(
+                    controls=[
+                        ft.Column(controls=lista, spacing=8, scroll=ft.ScrollMode.AUTO, height=280),
+                        ft.Divider(color=config.BORDE),
+                        ft.Row(
+                            controls=[
+                                ft.Text("Total:", size=14, weight=ft.FontWeight.BOLD, color=config.TEXTO_PRIMARIO),
+                                ft.Text(f"${self._carrito.total():,.2f}", size=16, weight=ft.FontWeight.BOLD, color=config.NARANJA),
+                            ],
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        ),
+                        ft.Text(f"Cantidad total: {self._carrito.cantidad_total()} articulos", size=12, color=config.TEXTO_SECUNDARIO),
+                    ],
+                    spacing=10,
+                ),
+            ),
+            actions=[
+                ft.TextButton("Seguir comprando", on_click=lambda e: self._cerrar(dialogo)),
+                boton_primario("Comprar", lambda e: self._comprar(dialogo), icono=ft.Icons.PAYMENT, expand=False),
+            ],
+        )
+        self._dialogo_carrito = dialogo
+        self._page.show_dialog(dialogo)
+
+    def _carrito_add(self, producto_id: int) -> None:
+        for p in self._productos:
+            if p.id == producto_id:
+                self._carrito.agregar(p)
+                break
+        self._refrescar_carrito()
+
+    def _carrito_remove(self, producto_id: int) -> None:
+        self._carrito.disminuir(producto_id)
+        self._refrescar_carrito()
+
+    def _carrito_del(self, producto_id: int) -> None:
+        self._carrito.eliminar(producto_id)
+        self._refrescar_carrito()
+
+    def _refrescar_carrito(self) -> None:
+        self._actualizar_barra_carrito()
+        if self._dialogo_carrito is not None:
+            self._dialogo_carrito.open = False
+            self._page.update()
+            self._dialogo_carrito = None
+        self._abrir_carrito()
+
+    def _comprar(self, dialogo) -> None:
+        self._cerrar(dialogo)
+        self._dialogo_carrito = None
+        self._carrito.vaciar()
+        self._actualizar_barra_carrito()
+        dialogo_mensaje(
+            self._page,
+            "Compra realizada",
+            "Tu compra ha sido registrada (modo demostracion).",
+        )
 
     def _cerrar(self, dialogo: ft.AlertDialog) -> None:
         """Cierra el dialogo de detalle."""
