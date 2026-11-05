@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from src.models.parsing import como_dict, entero, texto
+
 
 @dataclass
 class GeoLocation:
@@ -36,28 +38,29 @@ class UserDTO:
 
     @classmethod
     def from_dict(cls, data: dict) -> UserDTO:
-        name_data = data.get("name", {})
-        addr_data = data.get("address", {})
-        geo_data = addr_data.get("geolocation", {})
+        datos = como_dict(data)
+        name_data = como_dict(datos.get("name"))
+        addr_data = como_dict(datos.get("address"))
+        geo_data = como_dict(addr_data.get("geolocation"))
 
         return cls(
-            id=data.get("id", 0),
-            email=data.get("email", ""),
-            username=data.get("username", ""),
-            password=data.get("password", ""),
+            id=entero(datos.get("id")),
+            email=texto(datos.get("email")),
+            username=texto(datos.get("username")),
+            password=texto(datos.get("password")),
             name=UserName(
-                firstname=name_data.get("firstname", ""),
-                lastname=name_data.get("lastname", ""),
+                firstname=texto(name_data.get("firstname")),
+                lastname=texto(name_data.get("lastname")),
             ),
             address=Address(
-                city=addr_data.get("city", ""),
-                street=addr_data.get("street", ""),
-                number=addr_data.get("number", 0),
-                zipcode=addr_data.get("zipcode", ""),
+                city=texto(addr_data.get("city")),
+                street=texto(addr_data.get("street")),
+                number=entero(addr_data.get("number")),
+                zipcode=texto(addr_data.get("zipcode")),
                 geolocation=GeoLocation(
-                    lat=geo_data.get("lat", ""),
-                    long=geo_data.get("long", ""),
+                    lat=texto(geo_data.get("lat")),
+                    long=texto(geo_data.get("long")),
                 ),
             ),
-            phone=data.get("phone", ""),
+            phone=texto(datos.get("phone")),
         )

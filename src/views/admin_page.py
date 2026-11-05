@@ -15,6 +15,7 @@ import src.config as config
 from src.controllers.admin_controller import AdminController
 from src.controllers.auth_controller import AuthController
 from src.models.product import Calificacion, Producto
+from src.views.navigation import crear_barra_navegacion
 from src.views.widgets import boton_primario, campo_texto, dialogo_mensaje
 
 BORDE_SUAVE = ft.border.Border.all(width=1, color=config.BORDE)
@@ -23,10 +24,12 @@ BORDE_SUAVE = ft.border.Border.all(width=1, color=config.BORDE)
 class AdminPage:
     """Pantalla de administracion: articulos, estadisticas y permisos."""
 
-    def __init__(self, page: ft.Page, on_home, on_catalog) -> None:
+    def __init__(self, page: ft.Page, on_home, on_catalog, on_usuarios=None, on_carritos=None) -> None:
         self._page = page
         self._on_home = on_home          # callback de ir al perfil
         self._on_catalog = on_catalog    # callback de ir al catalogo
+        self._on_usuarios = on_usuarios  # callback del directorio
+        self._on_carritos = on_carritos  # callback de carritos globales
         self._admin = AdminController()
         self._auth = AuthController()
         self._productos: list[Producto] = []
@@ -164,15 +167,14 @@ class AdminPage:
             content=self._estado_cargando(),
         )
 
-        navegacion = ft.NavigationBar(
-            destinations=[
-                ft.NavigationBarDestination(icon=ft.Icons.PERSON, label="Mi perfil"),
-                ft.NavigationBarDestination(icon=ft.Icons.STORE, label="Catalogo"),
-                ft.NavigationBarDestination(icon=ft.Icons.ADMIN_PANEL_SETTINGS, label="Admin"),
-            ],
-            selected_index=2,
-            on_change=self._on_navegacion,
-            bgcolor=config.CARBON,
+        navegacion = crear_barra_navegacion(
+            self._auth.current_role,
+            "admin",
+            self._on_home,
+            self._on_catalog,
+            lambda: None,
+            self._on_usuarios,
+            self._on_carritos,
         )
 
         encabezados = ft.Column(
@@ -369,14 +371,9 @@ class AdminPage:
         self._filtro = e.control.value or ""
         self._pintar()
 
-    def _on_navegacion(self, e) -> None:
-        """Navega al perfil o al catalogo segun la pestana elegida."""
-        indice = e.control.selected_index
-        if indice == 0:
-            self._on_home()
-        elif indice == 1:
-            self._on_catalog()
-
+    # ------------------------------------------------------------------
+    # Tarjeta de articulo
+    # ------------------------------------------------------------------
     def _fila_articulo(self, producto: Producto) -> ft.Container:
         """Fila del listado: imagen, datos y botones editar/eliminar."""
         return ft.Container(

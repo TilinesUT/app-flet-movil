@@ -25,9 +25,15 @@ _PERMISOS_ADMIN = [
     },
     {
         "icono": "GROUPS",
-        "titulo": "Gestion de usuarios",
-        "detalle": "Moderar cuentas, accesos y datos de los usuarios.",
-        "funcional": False,
+        "titulo": "Consulta de usuarios",
+        "detalle": "Ver el directorio de cuentas registradas (solo lectura).",
+        "funcional": True,
+    },
+    {
+        "icono": "HISTORY",
+        "titulo": "Monitoreo de carritos",
+        "detalle": "Consultar el historial global de carritos (solo lectura).",
+        "funcional": True,
     },
     {
         "icono": "BAR_CHART",

@@ -14,10 +14,13 @@ import flet as ft
 
 import src.config as config
 from src.controllers.auth_controller import AuthController
+from src.models import Role
 from src.views.admin_page import AdminPage
+from src.views.carts_page import CartsPage
 from src.views.catalog_page import CatalogPage
 from src.views.dashboard_page import DashboardPage
 from src.views.login_page import LoginPage
+from src.views.users_page import UsersPage
 
 
 class App:
@@ -77,12 +80,20 @@ class App:
                 on_logout=self._cerrar_sesion,
                 on_catalog=self.mostrar_catalogo,
                 on_admin=self.mostrar_admin,
+                on_usuarios=self.mostrar_usuarios,
+                on_carritos=self.mostrar_carritos,
             ).build()
         )
 
     def mostrar_catalogo(self) -> None:
         """Muestra el catalogo de productos y dispara su carga asincrona."""
-        vista = CatalogPage(self.page, on_home=self.mostrar_home)
+        vista = CatalogPage(
+            self.page,
+            on_home=self.mostrar_home,
+            on_admin=self.mostrar_admin,
+            on_usuarios=self.mostrar_usuarios,
+            on_carritos=self.mostrar_carritos,
+        )
         self._cambiar_vista(vista.build())
         self.page.run_task(vista._cargar)
 
@@ -92,6 +103,44 @@ class App:
             self.page,
             on_home=self.mostrar_home,
             on_catalog=self.mostrar_catalogo,
+            on_usuarios=self.mostrar_usuarios,
+            on_carritos=self.mostrar_carritos,
+        )
+        self._cambiar_vista(vista.build())
+        self.page.run_task(vista._cargar)
+
+    def _puede_auditar(self) -> bool:
+        """True para administradores y auditores."""
+        return self.auth.current_role in (Role.ADMIN, Role.AUDITOR)
+
+    def mostrar_usuarios(self) -> None:
+        """Muestra el directorio de usuarios (admin y auditor)."""
+        if not self._puede_auditar():
+            self.mostrar_home()
+            return
+        vista = UsersPage(
+            self.page,
+            on_home=self.mostrar_home,
+            on_catalog=self.mostrar_catalogo,
+            on_admin=self.mostrar_admin,
+            on_usuarios=self.mostrar_usuarios,
+            on_carritos=self.mostrar_carritos,
+        )
+        self._cambiar_vista(vista.build())
+        self.page.run_task(vista._cargar)
+
+    def mostrar_carritos(self) -> None:
+        """Muestra el historial global de carritos (admin y auditor)."""
+        if not self._puede_auditar():
+            self.mostrar_home()
+            return
+        vista = CartsPage(
+            self.page,
+            on_home=self.mostrar_home,
+            on_catalog=self.mostrar_catalogo,
+            on_admin=self.mostrar_admin,
+            on_usuarios=self.mostrar_usuarios,
+            on_carritos=self.mostrar_carritos,
         )
         self._cambiar_vista(vista.build())
         self.page.run_task(vista._cargar)

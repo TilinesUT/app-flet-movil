@@ -12,6 +12,7 @@ import src.config as config
 from src.controllers.auth_controller import AuthController
 from src.controllers.user_controller import UserController
 from src.models import Role
+from src.views.navigation import crear_barra_navegacion
 from src.views.widgets import (
     avatar_codigo,
     boton_primario,
@@ -26,11 +27,13 @@ BORDE_SUAVE = ft.border.Border.all(width=1, color=config.BORDE)
 class DashboardPage:
     """Pantalla del perfil: identidad, datos y permisos del usuario."""
 
-    def __init__(self, page: ft.Page, on_logout, on_catalog, on_admin=None) -> None:
+    def __init__(self, page: ft.Page, on_logout, on_catalog, on_admin=None, on_usuarios=None, on_carritos=None) -> None:
         self._page = page
         self._on_logout = on_logout       # callback de cerrar sesion
         self._on_catalog = on_catalog     # callback de ir al catalogo
         self._on_admin = on_admin         # callback del panel admin (solo admin)
+        self._on_usuarios = on_usuarios   # callback del directorio (admin/auditor)
+        self._on_carritos = on_carritos   # callback de carritos (admin/auditor)
         self._auth = AuthController()
         self._usuario = UserController()
 
@@ -184,20 +187,16 @@ class DashboardPage:
             expand=True,
         )
 
-        # Barra inferior: la pestana "Admin" solo aparece para administradores.
-        destinos = [
-            ft.NavigationBarDestination(icon=ft.Icons.PERSON, label="Mi perfil"),
-            ft.NavigationBarDestination(icon=ft.Icons.STORE, label="Catalogo"),
-        ]
-        if es_admin:
-            destinos.append(
-                ft.NavigationBarDestination(icon=ft.Icons.ADMIN_PANEL_SETTINGS, label="Admin")
-            )
-        navegacion = ft.NavigationBar(
-            destinations=destinos,
-            selected_index=0,
-            on_change=self._on_navegacion,
-            bgcolor=config.CARBON,
+        # Barra inferior: las secciones de auditoria solo aparecen para
+        # administradores y auditores (los clientes no ven "Usuarios").
+        navegacion = crear_barra_navegacion(
+            rol,
+            "perfil",
+            lambda: None,
+            self._on_catalog,
+            self._on_admin,
+            self._on_usuarios,
+            self._on_carritos,
         )
 
         return ft.Container(
@@ -213,10 +212,3 @@ class DashboardPage:
                 expand=True,
             ),
         )
-
-    def _on_navegacion(self, e) -> None:
-        """Navega segun la pestana elegida en la barra inferior."""
-        if e.control.selected_index == 1:
-            self._on_catalog()
-        elif e.control.selected_index == 2 and self._on_admin is not None:
-            self._on_admin()

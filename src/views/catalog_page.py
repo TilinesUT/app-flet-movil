@@ -18,6 +18,7 @@ from src.models import Role
 from src.models.cart import Carrito
 from src.models.product import CATEGORIAS_LEGIBLES, Calificacion, Producto
 from src.services.api_service import ApiService
+from src.views.navigation import crear_barra_navegacion
 from src.views.widgets import (
     boton_primario,
     calificacion_estrellas,
@@ -32,9 +33,12 @@ BORDE_SUAVE = ft.border.Border.all(width=1, color=config.BORDE)
 class CatalogPage:
     """Pantalla del catalogo: busqueda, filtros y cuadricula de productos."""
 
-    def __init__(self, page: ft.Page, on_home) -> None:
+    def __init__(self, page: ft.Page, on_home, on_admin=None, on_usuarios=None, on_carritos=None) -> None:
         self._page = page
         self._on_home = on_home              # callback de volver al perfil
+        self._on_admin = on_admin            # callback del panel admin
+        self._on_usuarios = on_usuarios      # callback del directorio
+        self._on_carritos = on_carritos      # callback de carritos globales
         self._api = ApiService()
         self._admin = AdminController()       # edicion de articulos
         self._auth = AuthController()
@@ -52,6 +56,7 @@ class CatalogPage:
         self._texto_carrito = None
         self._contenedor_carrito = None
         self._dialogo_carrito = None
+        self._comprando = False
 
     # ------------------------------------------------------------------
     # Construccion de la vista
@@ -167,14 +172,14 @@ class CatalogPage:
             content=self._estado_cargando(),
         )
 
-        navegacion = ft.NavigationBar(
-            destinations=[
-                ft.NavigationBarDestination(icon=ft.Icons.PERSON, label="Mi perfil"),
-                ft.NavigationBarDestination(icon=ft.Icons.STORE, label="Catalogo"),
-            ],
-            selected_index=1,
-            on_change=self._on_navegacion,
-            bgcolor=config.CARBON,
+        navegacion = crear_barra_navegacion(
+            self._auth.current_role,
+            "catalogo",
+            self._on_home,
+            lambda: None,
+            self._on_admin,
+            self._on_usuarios,
+            self._on_carritos,
         )
 
         encabezados = ft.Column(
@@ -359,11 +364,6 @@ class CatalogPage:
         """Cambia la categoria y recarga el catalogo desde la API."""
         self._categoria = e.control.value or None
         self._page.run_task(self._cargar)
-
-    def _on_navegacion(self, e) -> None:
-        """Vuelve al perfil al pulsar la pestana 'Mi perfil'."""
-        if e.control.selected_index == 0:
-            self._on_home()
 
     # ------------------------------------------------------------------
     # Dialogo de detalle de un producto
@@ -572,6 +572,44 @@ class CatalogPage:
         self._abrir_carrito()
 
     def _comprar(self, dialogo) -> None:
+        """Inicia el registro asincrono de la compra."""
+        if self._comprando:
+            return
+        self._comprando = True
+        self._page.run_task(self._registrar_compra, dialogo)
+
+    async def _registrar_compra(self, dialogo) -> None:
+        """Guarda la compra en el historial global y vacia el carrito."""
+        items = self._carrito.items()
+        usuario = self._auth.current_user
+
+        if not items or usuario is None:
+            self._comprando = False
+            self._cerrar(dialogo)
+            dialogo_mensaje(
+                self._page,
+                "Compra no realizada",
+                "No hay articulos en el carrito o la sesion no es valida.",
+            )
+            return
+
+        try:
+            carrito = await asyncio.to_thread(
+                self._api.registrar_compra,
+                usuario.id,
+                items,
+            )
+        except Exception:
+            self._comprando = False
+            self._cerrar(dialogo)
+            dialogo_mensaje(
+                self._page,
+                "Compra no registrada",
+                "No se pudo guardar la compra. Intenta de nuevo.",
+            )
+            return
+
+        self._comprando = False
         self._cerrar(dialogo)
         self._dialogo_carrito = None
         self._carrito.vaciar()
@@ -579,7 +617,7 @@ class CatalogPage:
         dialogo_mensaje(
             self._page,
             "Compra realizada",
-            "Tu compra ha sido registrada (modo demostracion).",
+            f"La compra #{carrito.id} se registro en el historial global.",
         )
 
     def _cerrar(self, dialogo: ft.AlertDialog) -> None:

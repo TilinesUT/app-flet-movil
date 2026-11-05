@@ -321,3 +321,43 @@ def tarjeta_producto(
         border_radius=ft.BorderRadius.all(14),
         border=BORDE_SUAVE,
     )
+
+
+def pantalla_acceso_denegado(mensaje: str, on_volver=None) -> ft.Container:
+    """Pantalla de bloqueo para secciones restringidas por rol."""
+    controles: list[ft.Control] = [
+        ft.Icon(ft.Icons.SHIELD_OUTLINED, size=56, color=config.ERROR),
+        ft.Text(
+            "Acceso denegado",
+            size=20,
+            weight=ft.FontWeight.BOLD,
+            color=config.TEXTO_PRIMARIO,
+            text_align=ft.TextAlign.CENTER,
+        ),
+        ft.Text(
+            mensaje,
+            size=13,
+            color=config.TEXTO_SECUNDARIO,
+            text_align=ft.TextAlign.CENTER,
+        ),
+    ]
+    if on_volver is not None:
+        controles.append(
+            boton_primario("Volver al perfil", on_volver, icono=ft.Icons.PERSON)
+        )
+
+    return ft.Container(
+        expand=True,
+        gradient=ft.LinearGradient(
+            begin=ft.Alignment.TOP_CENTER,
+            end=ft.Alignment.BOTTOM_CENTER,
+            colors=[config.NEGRO, config.CARBON, config.NEGRO],
+        ),
+        alignment=ft.Alignment.CENTER,
+        padding=ft.Padding.all(24),
+        content=ft.Column(
+            controls=controles,
+            spacing=14,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        ),
+    )
