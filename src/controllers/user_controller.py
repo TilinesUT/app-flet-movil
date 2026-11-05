@@ -28,11 +28,6 @@ _PERMISOS_POR_ROL = {
         "icono": "VIEW_LIST",
         "detalle": "Puede ver el catalogo, consultar su perfil y comprar productos.",
     },
-    Role.DESCONOCIDO: {
-        "titulo": "Sin permisos",
-        "icono": "HELP",
-        "detalle": "No se pudo determinar un rol valido para este usuario.",
-    },
 }
 
 
@@ -46,15 +41,20 @@ class UserController:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def get_role_label(self, role: Role) -> str:
-        """Nombre legible del rol en espanol."""
+    def get_role_label(self, role: Role, rol_api: str = "") -> str:
+        """Nombre legible del rol en espanol.
+
+        Si el rol no es uno de los conocidos por la app, se muestra el
+        nombre tal cual viene de la API.
+        """
         etiquetas = {
             Role.ADMIN: "Administrador",
             Role.AUDITOR: "Auditor",
             Role.CLIENT: "Usuario",
-            Role.DESCONOCIDO: "Desconocido",
         }
-        return etiquetas.get(role, "Desconocido")
+        if role in etiquetas:
+            return etiquetas[role]
+        return (rol_api or "").strip().upper() or "Sin rol"
 
     def get_role_color(self, role: Role) -> str:
         """Color del rol segun la paleta naranja de la app."""
@@ -66,9 +66,16 @@ class UserController:
         }
         return colores.get(role, config.TEXTO_ATENUADO)
 
-    def get_permissions(self, role: Role) -> dict:
+    def get_permissions(self, role: Role, rol_api: str = "") -> dict:
         """Informacion de permisos (titulo, icono, detalle) del rol."""
-        return _PERMISOS_POR_ROL.get(role, _PERMISOS_POR_ROL[Role.DESCONOCIDO])
+        if role in _PERMISOS_POR_ROL and role is not Role.DESCONOCIDO:
+            return _PERMISOS_POR_ROL[role]
+
+        return {
+            "titulo": self.get_role_label(role, rol_api),
+            "icono": "HELP",
+            "detalle": "La API no define permisos especificos para este rol.",
+        }
 
     def get_full_name(self, user: UserDTO) -> str:
         """Nombre y apellido del usuario."""

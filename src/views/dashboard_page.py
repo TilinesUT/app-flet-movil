@@ -77,9 +77,9 @@ class DashboardPage:
             return ft.Container(expand=True, bgcolor=config.NEGRO)
 
         nombre = self._usuario.get_full_name(usuario)
-        etiqueta_rol = self._usuario.get_role_label(rol)
+        etiqueta_rol = self._usuario.get_role_label(rol, usuario.role)
         color_rol = self._usuario.get_role_color(rol)
-        permisos = self._usuario.get_permissions(rol)
+        permisos = self._usuario.get_permissions(rol, usuario.role)
 
         # Cabecera de la pagina.
         cabecera = ft.Row(
@@ -125,7 +125,7 @@ class DashboardPage:
             ft.Icons.PERSON,
             [
                 fila_dato(ft.Icons.PERSON, "Usuario", usuario.username),
-                fila_dato(ft.Icons.BADGE, "Rol", etiqueta_rol),
+                fila_dato(ft.Icons.BADGE, "Rol", usuario.role or etiqueta_rol),
                 fila_dato(ft.Icons.NUMBERS, "ID de cuenta", str(usuario.id)),
             ],
         )

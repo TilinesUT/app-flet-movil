@@ -286,7 +286,7 @@ class UsersPage:
         rol = Role.from_nombre(usuario.role)
         nombre = self._usuarios_ctrl.get_full_name(usuario).strip()
         nombre = nombre or usuario.username or f"Usuario #{usuario.id}"
-        etiqueta_rol = self._usuarios_ctrl.get_role_label(rol)
+        etiqueta_rol = self._usuarios_ctrl.get_role_label(rol, usuario.role)
         color_rol = self._usuarios_ctrl.get_role_color(rol)
 
         datos = ft.Column(
@@ -295,6 +295,7 @@ class UsersPage:
                     ft.Icons.ALTERNATE_EMAIL,
                     f"@{usuario.username}" if usuario.username else "",
                 ),
+                self._dato(ft.Icons.BADGE, usuario.role or "Sin rol"),
                 self._dato(ft.Icons.NUMBERS, f"ID {usuario.id}"),
             ],
             spacing=5,

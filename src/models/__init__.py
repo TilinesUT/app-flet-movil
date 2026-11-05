@@ -24,5 +24,6 @@ class Role(Enum):
             "ADMIN": Role.ADMIN,
             "AUDITOR": Role.AUDITOR,
             "CLIENT": Role.CLIENT,
+            "USUARIO": Role.CLIENT,
         }
         return roles.get((rol or "").strip().upper(), Role.DESCONOCIDO)
