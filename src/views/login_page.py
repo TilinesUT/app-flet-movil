@@ -1,7 +1,7 @@
 """Vista de inicio de sesion (tema naranja/negro).
 
-Permite autenticarse contra la FakeStore API de forma asincrona y
-distingue entre credenciales invalidas y errores de conexion.
+Permite autenticarse contra la API local de forma asincrona y distingue
+entre credenciales invalidas y errores de conexion.
 """
 
 from __future__ import annotations
@@ -14,12 +14,11 @@ import src.config as config
 from src.controllers.auth_controller import AuthController
 from src.views.widgets import boton_primario, campo_texto
 
-# Cuentas de prueba de la FakeStore API (codigo = id del usuario).
+# Cuentas de prueba cargadas en la API local.
 _CUENTAS_DEMO = [
-    ("johnd", "1"),
-    ("mor_2314", "2"),
-    ("kevinryan", "3"),
-    ("donero", "4"),
+    ("johnd", "m38rmF$", "ADMIN"),
+    ("mor_2314", "83r5^_", "AUDITOR"),
+    ("kevinryan", "kev02937@", "USUARIO"),
 ]
 
 
@@ -39,7 +38,7 @@ class LoginPage:
         """Construye y devuelve la vista completa del login."""
         self._campo_usuario = campo_texto(
             "Usuario",
-            hint="Tu codigo de acceso",
+            hint="Tu usuario de la API",
             icono=ft.Icons.PERSON,
         )
         self._campo_contrasena = campo_texto(
@@ -113,20 +112,20 @@ class LoginPage:
                     ft.Row(
                         controls=[
                             ft.Text(
-                                f"  {usuario}",
+                                f"  {usuario} / {contrasena}",
                                 size=12,
                                 color=config.TEXTO_PRIMARIO,
                                 weight=ft.FontWeight.W_500,
                             ),
                             ft.Text(
-                                f"(rol codigo {codigo})",
+                                f"({rol})",
                                 size=12,
                                 color=config.TEXTO_ATENUADO,
                             ),
                         ],
                         spacing=4,
                     )
-                    for usuario, codigo in _CUENTAS_DEMO
+                    for usuario, contrasena, rol in _CUENTAS_DEMO
                 ],
             ],
             spacing=4,
@@ -194,7 +193,7 @@ class LoginPage:
         except Exception:
             # Fallo de red, DNS, timeout, servidor caido, etc.
             self._error_texto.value = (
-                "Error de conexion. Revisa tu internet e intenta de nuevo."
+                f"No se pudo conectar con la API en {config.API_BASE}."
             )
         else:
             # Exito: se pasa al siguiente modulo (Home del usuario).

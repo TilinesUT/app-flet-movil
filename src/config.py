@@ -4,6 +4,8 @@ Todos los colores naranja/negro de la app se definen aqui, en un solo lugar,
 para mantener la coherencia visual de toda la interfaz.
 """
 
+import os
+
 # ---------------------------------------------------------------------------
 # Paleta de colores (tema naranja / negro)
 # ---------------------------------------------------------------------------
@@ -27,16 +29,11 @@ ERROR = "#EF4444"            # mensajes de error
 INFO = "#3B82F6"             # informacion
 
 # ---------------------------------------------------------------------------
-# Reglas de roles segun el codigo (id) del usuario
+# API local (backend Express en el puerto 3000)
 # ---------------------------------------------------------------------------
-IDS_ADMIN = (1, 2)           # codigos 1 y 2 -> administrador
-ID_AUDITOR = 3               # codigo 3      -> auditor
-# Cualquier otro codigo (4 o superior) -> usuario/cliente
-
-# ---------------------------------------------------------------------------
-# API externa (FakeStore)
-# ---------------------------------------------------------------------------
-API_BASE = "https://fakestoreapi.com"
+# En un emulador de Android se usa http://10.0.2.2:3000 para llegar al host.
+API_BASE = os.environ.get("TIENDA_API_BASE", "http://localhost:3000").rstrip("/")
+API_TIMEOUT = 15  # segundos para cada peticion HTTP
 
 # ---------------------------------------------------------------------------
 # Tamano de la ventana (estilo movil)

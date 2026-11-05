@@ -1,6 +1,6 @@
 """Vista de inicio del usuario autenticado (Mi Perfil).
 
-Muestra la identidad, el rol segun el codigo del usuario y sus permisos,
+Muestra la identidad, el rol asignado en la API y sus permisos,
 con enlaces para ir al catalogo o cerrar sesion.
 """
 
@@ -107,7 +107,7 @@ class DashboardPage:
                 controls=[
                     avatar_codigo(usuario.id),
                     ft.Text(nombre, size=20, weight=ft.FontWeight.BOLD, color=config.TEXTO_PRIMARIO),
-                    ft.Text(usuario.email, size=13, color=config.TEXTO_SECUNDARIO),
+                    ft.Text(f"@{usuario.username}", size=13, color=config.TEXTO_SECUNDARIO),
                     insignia_rol(etiqueta_rol, color_rol),
                 ],
                 spacing=10,
@@ -124,11 +124,9 @@ class DashboardPage:
             "Datos del usuario",
             ft.Icons.PERSON,
             [
-                fila_dato(ft.Icons.MAIL, "Correo", usuario.email),
                 fila_dato(ft.Icons.PERSON, "Usuario", usuario.username),
-                fila_dato(ft.Icons.PHONE, "Telefono", usuario.phone),
-                fila_dato(ft.Icons.PLACE, "Direccion", self._usuario.get_full_address(usuario)),
-                fila_dato(ft.Icons.LOCATION_CITY, "Ciudad", usuario.address.city),
+                fila_dato(ft.Icons.BADGE, "Rol", etiqueta_rol),
+                fila_dato(ft.Icons.NUMBERS, "ID de cuenta", str(usuario.id)),
             ],
         )
 

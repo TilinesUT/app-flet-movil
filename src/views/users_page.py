@@ -1,8 +1,8 @@
 """Vista del directorio de usuarios (US11).
 
-Solo accesible para administradores (codigos 1 y 2) y auditores (codigo 3).
-Muestra nombre completo, correo, telefono y nombre de usuario de cada
-cuenta, con estados de carga, error y reintento. No permite editar datos.
+Solo accesible para administradores y auditores. Muestra el nombre, el
+usuario y el rol de cada cuenta, con estados de carga, error y reintento.
+No permite editar datos.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ BORDE_SUAVE = ft.border.Border.all(width=1, color=config.BORDE)
 
 
 class UsersPage:
-    """Directorio de cuentas registradas en la FakeStore API."""
+    """Directorio de cuentas registradas en la API local."""
 
     def __init__(
         self,
@@ -283,12 +283,11 @@ class UsersPage:
         )
 
     def _tarjeta_usuario(self, usuario: UserDTO) -> ft.Container:
-        rol = Role.from_id(usuario.id)
+        rol = Role.from_nombre(usuario.role)
         nombre = self._usuarios_ctrl.get_full_name(usuario).strip()
         nombre = nombre or usuario.username or f"Usuario #{usuario.id}"
         etiqueta_rol = self._usuarios_ctrl.get_role_label(rol)
         color_rol = self._usuarios_ctrl.get_role_color(rol)
-        direccion = self._usuarios_ctrl.get_full_address(usuario).strip(" ,")
 
         datos = ft.Column(
             controls=[
@@ -296,9 +295,7 @@ class UsersPage:
                     ft.Icons.ALTERNATE_EMAIL,
                     f"@{usuario.username}" if usuario.username else "",
                 ),
-                self._dato(ft.Icons.MAIL, usuario.email),
-                self._dato(ft.Icons.PHONE, usuario.phone),
-                self._dato(ft.Icons.PLACE, direccion),
+                self._dato(ft.Icons.NUMBERS, f"ID {usuario.id}"),
             ],
             spacing=5,
         )

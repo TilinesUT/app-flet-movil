@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 from src.models.user import UserDTO
@@ -35,26 +34,12 @@ class Session:
 
     def save(self, user: UserDTO) -> None:
         self._user = user
-        self._role = Role.from_id(user.id)
+        self._role = Role.from_nombre(user.role)
         data = {
             "id": user.id,
-            "email": user.email,
-            "username": user.username,
-            "name": {
-                "firstname": user.name.firstname,
-                "lastname": user.name.lastname,
-            },
-            "address": {
-                "city": user.address.city,
-                "street": user.address.street,
-                "number": user.address.number,
-                "zipcode": user.address.zipcode,
-                "geolocation": {
-                    "lat": user.address.geolocation.lat,
-                    "long": user.address.geolocation.long,
-                },
-            },
-            "phone": user.phone,
+            "user": user.username,
+            "name": user.name.firstname + " " + user.name.lastname,
+            "role": user.role,
         }
         SESSION_FILE.write_text(json.dumps(data), encoding="utf-8")
 
@@ -69,7 +54,7 @@ class Session:
             data = json.loads(SESSION_FILE.read_text(encoding="utf-8"))
             user = UserDTO.from_dict(data)
             self._user = user
-            self._role = Role.from_id(user.id)
+            self._role = Role.from_nombre(data.get("role") or user.role)
             return user
         except Exception:
             self.destroy()

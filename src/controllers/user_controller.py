@@ -72,7 +72,7 @@ class UserController:
 
     def get_full_name(self, user: UserDTO) -> str:
         """Nombre y apellido del usuario."""
-        return f"{user.name.firstname} {user.name.lastname}"
+        return user.nombre_completo()
 
     def get_full_address(self, user: UserDTO) -> str:
         """Direccion completa formateada del usuario."""

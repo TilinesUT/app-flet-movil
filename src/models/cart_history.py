@@ -1,4 +1,4 @@
-"""Modelos del historial global de carritos (FakeStore /carts)."""
+"""Modelos del historial global de carritos."""
 
 from __future__ import annotations
 

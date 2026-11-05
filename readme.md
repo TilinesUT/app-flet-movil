@@ -1,46 +1,53 @@
 # Tienda Naranja (app movil con Flet)
 
-Aplicacion movil de ejemplo construida con **Flet** (Python) que muestra:
+Aplicacion movil construida con **Flet** (Python) que consume la API local
+(backend Express en `http://localhost:3000`) y muestra:
 
-- Inicio de sesion con credenciales reales contra la [FakeStore API](https://fakestoreapi.com).
-- Perfil del usuario con su **codigo (id)** y su **rol** asignado.
+- Inicio de sesion con credenciales reales contra `POST /users/login`.
+- Perfil del usuario con su **usuario**, su **rol** (`ADMIN`, `AUDITOR`,
+  `CLIENT`) y los permisos de ese rol.
 - Catalogo de productos con busqueda, filtro por categoria y detalle.
-- **Panel de administracion** (solo codigos 1 y 2) para crear, editar y
+- **Panel de administracion** (solo rol `ADMIN`) para crear, editar y
   eliminar articulos, con estadisticas y los permisos tipicos del rol.
+- Directorio de usuarios e historial de carritos para `ADMIN` y `AUDITOR`.
 
-## Roles segun el codigo del usuario
+## Roles
 
-| Codigo (id) | Rol       |
-| ----------- | --------- |
-| 1 y 2       | Admin     |
-| 3           | Auditor   |
-| 4 o mas     | Usuario   |
+El rol viene en el campo `role` de cada usuario de la API.
+
+| Rol       | Permisos                                      |
+| --------- | --------------------------------------------- |
+| `ADMIN`   | Catalogo, panel de administracion, usuarios, carritos |
+| `AUDITOR` | Catalogo, usuarios y carritos (solo lectura)  |
+| `CLIENT`  | Catalogo, perfil y compra de articulos        |
 
 ### Cuentas de prueba
 
-| Usuario   | Codigo | Rol       |
-| --------- |--------|-----------|
-| `johnd`   | 1      | Admin     |
-| `mor_2314`| 2      | Admin     |
-| `kevinryan`| 3     | Auditor   |
-| `donero`  | 4      | Usuario   |
+| Usuario     | Contrasena  | Rol     |
+| ----------- | ----------- | ------- |
+| `johnd`     | `m38rmF$`   | ADMIN   |
+| `mor_2314`  | `83r5^_`    | AUDITOR |
+| `kevinryan` | `kev02937@` | USUARIO |
+| `donero`    | `ewedon`    | USUARIO |
 
-> Las contrasenas de estas cuentas de prueba no se muestran aqui; al
-> iniciar sesion el sistema las valida directamente contra la FakeStore API.
+> Los articulos y usuarios vienen de la FakeStore API y se cargan en la base
+> de datos con `node seed.mjs` (proyecto `app-backend`).
 
-## Panel de administracion
+## Rutas de la API que usa la app
 
-Solo los usuarios con codigo **1 o 2** (rol administrador) ven el boton
-"Gestionar articulos" y la pestana **Admin** de la barra inferior. Desde
-alli pueden:
+| Metodo | Ruta                   | Uso en la app                          |
+| ------ | ---------------------- | -------------------------------------- |
+| POST   | `/users/login`         | Inicio de sesion                        |
+| GET    | `/users`               | Directorio de usuarios (admin/auditor)  |
+| GET    | `/products`            | Catalogo                                |
+| GET    | `/products/categories` | Filtro por categoria                    |
+| GET    | `/products/:id`        | Detalle de un articulo                  |
+| POST   | `/products`            | Crear articulo (admin)                  |
+| PUT    | `/products`            | Editar articulo (admin)                 |
+| DELETE | `/products/:id`        | Eliminar articulo (admin)               |
 
-- Crear, editar y eliminar **articulos** del catalogo.
-- Ver estadisticas (total de articulos, categorias y precio promedio).
-- Consultar los permisos tipicos del rol administrador.
-
-> La FakeStore API es de solo lectura (no persiste los cambios); las
-> modificaciones del administrador se mantienen durante la sesion actual
-> y se reflejan en el catalogo en tiempo real.
+El historial de carritos se guarda en el equipo (`~/.proyecto_movil_carts.json`)
+porque la API todavia no expone rutas de carritos.
 
 ## Estructura del proyecto (patron MVC)
 
@@ -53,16 +60,19 @@ app-flet-movil/
 ├── main.py                      # Punto de entrada y navegacion (App)
 ├── requirements.txt             # Dependencias
 └── src/
-    ├── config.py                # Paleta naranja/negro y constantes
+    ├── config.py                # Paleta naranja/negro, URL de la API
     ├── models/                  # MODELOS (datos)
-    │   ├── __init__.py          # Enum Role (reglas de codigos)
-    │   ├── user.py              # UserDTO + direccion + geolocalizacion
+    │   ├── __init__.py          # Enum Role (ADMIN, AUDITOR, CLIENT)
+    │   ├── user.py              # UserDTO (nombre, usuario, rol)
     │   ├── product.py           # Producto del catalogo
+    │   ├── cart.py              # Carrito de compras en memoria
+    │   ├── cart_history.py      # Historial de carritos
     │   └── session.py           # Sesion persistida en disco
     ├── controllers/             # CONTROLADORES (logica de negocio)
     │   ├── auth_controller.py   # Login, sesion y usuario actual
     │   ├── user_controller.py   # Roles, colores y datos del usuario
-    │   └── admin_controller.py  # Permisos y CRUD de articulos (admin)
+    │   ├── admin_controller.py  # Permisos y CRUD de articulos (admin)
+    │   └── audit_controller.py  # Consultas de solo lectura (admin/auditor)
     ├── services/                # SERVICIOS (acceso a la API)
     │   └── api_service.py       # HTTP: login, productos, categorias, CRUD
     └── views/                   # VISTAS (interfaz Flet)
@@ -70,6 +80,9 @@ app-flet-movil/
         ├── dashboard_page.py    # Perfil del usuario + rol
         ├── catalog_page.py      # Catalogo de productos
         ├── admin_page.py        # Panel de administracion (CRUD)
+        ├── users_page.py        # Directorio de usuarios
+        ├── carts_page.py        # Historial global de carritos
+        ├── navigation.py        # Barra inferior segun el rol
         └── widgets.py           # Componentes visuales reutilizables
 ```
 
@@ -81,7 +94,15 @@ app-flet-movil/
    pip install -r requirements.txt
    ```
 
-2. Ejecutar la aplicacion (ventana nativa):
+2. Levantar la API en otra terminal:
+
+   ```bash
+   cd ../app-backend
+   node seed.mjs
+   npm run dev
+   ```
+
+3. Ejecutar la aplicacion (ventana nativa):
 
    ```bash
    python main.py
@@ -90,7 +111,7 @@ app-flet-movil/
    O como app web en el navegador:
 
    ```bash
-   set FLET_VIEW=web && python main.py
+   FLET_VIEW=web python main.py
    ```
 
 ## Construir el APK (Android)

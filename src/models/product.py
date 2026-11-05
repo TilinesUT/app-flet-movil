@@ -1,4 +1,4 @@
-"""Modelo de datos de un producto del catalogo (FakeStore API)."""
+"""Modelo de datos de un producto del catalogo."""
 
 from __future__ import annotations
 
@@ -11,6 +11,14 @@ CATEGORIAS_LEGIBLES = {
     "men's clothing": "Ropa de caballero",
     "women's clothing": "Ropa de dama",
 }
+
+
+def _numero(valor, defecto: float = 0.0) -> float:
+    """Convierte un valor a float sin lanzar excepciones."""
+    try:
+        return float(valor)
+    except (TypeError, ValueError):
+        return defecto
 
 
 @dataclass
@@ -36,17 +44,24 @@ class Producto:
     @classmethod
     def from_json(cls, datos: dict) -> "Producto":
         """Construye un Producto a partir del JSON que devuelve la API."""
-        rate = datos.get("rating", {})
+        rating = datos.get("rating")
+        if isinstance(rating, dict):
+            tasa = rating.get("rate", 0.0)
+            conteo = rating.get("count", 0)
+        else:
+            tasa = datos.get("rating_rate", 0.0)
+            conteo = datos.get("rating_count", 0)
+
         return cls(
-            id=datos.get("id", 0),
-            titulo=datos.get("title", ""),
-            precio=datos.get("price", 0.0),
-            descripcion=datos.get("description", ""),
-            categoria=datos.get("category", ""),
-            imagen=datos.get("image", ""),
+            id=int(_numero(datos.get("id"))),
+            titulo=str(datos.get("title", "")),
+            precio=_numero(datos.get("price")),
+            descripcion=str(datos.get("description", "")),
+            categoria=str(datos.get("category", "")),
+            imagen=str(datos.get("image", "")),
             calificacion=Calificacion(
-                tasa=rate.get("rate", 0.0),
-                conteo=rate.get("count", 0),
+                tasa=_numero(tasa),
+                conteo=int(_numero(conteo)),
             ),
         )
 

@@ -68,7 +68,7 @@ class AdminPage:
                     ),
                     ft.Text(
                         "Esta opcion solo esta disponible para administradores "
-                        "(codigos 1 y 2).",
+                        "(rol ADMIN).",
                         size=13,
                         color=config.TEXTO_SECUNDARIO,
                         text_align=ft.TextAlign.CENTER,
@@ -541,16 +541,21 @@ class AdminPage:
             descripcion=(campo_descripcion.value or "").strip(),
             categoria=categoria,
             imagen=(campo_imagen.value or "").strip(),
-            calificacion=Calificacion(),
+            calificacion=producto.calificacion if producto is not None else Calificacion(),
         )
 
         # Guardar en un hilo aparte para no bloquear la interfaz.
-        if producto is not None:
-            await asyncio.to_thread(self._admin.actualizar_articulo, nuevo, producto.id)
-            titulo_aviso, mensaje = "Articulo modificado", "Los cambios se guardaron correctamente."
-        else:
-            await asyncio.to_thread(self._admin.crear_articulo, nuevo)
-            titulo_aviso, mensaje = "Articulo creado", "El nuevo articulo se agrego al catalogo correctamente."
+        try:
+            if producto is not None:
+                await asyncio.to_thread(self._admin.actualizar_articulo, nuevo, producto.id)
+                titulo_aviso, mensaje = "Articulo modificado", "Los cambios se guardaron correctamente."
+            else:
+                await asyncio.to_thread(self._admin.crear_articulo, nuevo)
+                titulo_aviso, mensaje = "Articulo creado", "El nuevo articulo se agrego al catalogo correctamente."
+        except Exception as error:
+            error_texto.value = str(error) or "No se pudo guardar el articulo."
+            self._page.update()
+            return
 
         self._cerrar(dialogo)
         dialogo_mensaje(self._page, titulo_aviso, mensaje)
@@ -586,7 +591,17 @@ class AdminPage:
 
     async def _confirmar_eliminacion(self, producto: Producto, dialogo) -> None:
         """Ejecuta la eliminacion y refresca el panel."""
-        await asyncio.to_thread(self._admin.eliminar_articulo, producto.id)
+        try:
+            await asyncio.to_thread(self._admin.eliminar_articulo, producto.id)
+        except Exception as error:
+            self._cerrar(dialogo)
+            dialogo_mensaje(
+                self._page,
+                "No se pudo eliminar",
+                str(error) or "El articulo no se pudo eliminar.",
+            )
+            return
+
         self._cerrar(dialogo)
         dialogo_mensaje(self._page, "Articulo eliminado", "El articulo se elimino correctamente.")
         await self._cargar()

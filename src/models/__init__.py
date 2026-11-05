@@ -1,17 +1,16 @@
 """Modelo de dominio: roles de los usuarios de la aplicacion.
 
-Reglas de la aplicacion:
-- Codigos 1 y 2  -> Administrador
-- Codigo 3       -> Auditor
-- Codigo 4 o mas -> Usuario/cliente
-- Cualquier otro (0 o negativo) -> Desconocido
+El rol llega desde la API en el campo `role` de cada usuario:
+- ADMIN   -> administrador
+- AUDITOR -> auditor
+- CLIENT  -> usuario/cliente
 """
 
 from enum import Enum
 
 
 class Role(Enum):
-    """Roles posibles segun el codigo (id) del usuario."""
+    """Roles posibles segun el rol que devuelve la API."""
 
     ADMIN = "admin"
     AUDITOR = "auditor"
@@ -19,12 +18,11 @@ class Role(Enum):
     DESCONOCIDO = "desconocido"
 
     @staticmethod
-    def from_id(user_id: int) -> "Role":
-        """Devuelve el rol correspondiente al codigo de usuario."""
-        if user_id in (1, 2):            # codigos 1 y 2 -> administrador
-            return Role.ADMIN
-        if user_id == 3:                 # codigo 3 -> auditor
-            return Role.AUDITOR
-        if user_id >= 4:                 # codigo 4 o superior -> usuario
-            return Role.CLIENT
-        return Role.DESCONOCIDO          # 0 o negativo -> desconocido
+    def from_nombre(rol: str | None) -> "Role":
+        """Convierte el texto del rol de la API en su enumerado."""
+        roles = {
+            "ADMIN": Role.ADMIN,
+            "AUDITOR": Role.AUDITOR,
+            "CLIENT": Role.CLIENT,
+        }
+        return roles.get((rol or "").strip().upper(), Role.DESCONOCIDO)

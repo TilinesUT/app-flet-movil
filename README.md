@@ -1,10 +1,12 @@
 # Proyecto Movil (Flet)
 
-Aplicacion movil con Flet: login y dashboard usando usuarios de FakeStoreAPI.
+Aplicacion movil con Flet: login, dashboard y catalogo consumiendo la **API local**
+(backend Express en `http://localhost:3000`).
 
 ## Requisitos
 
 - Python 3.14 (ya instalado en esta maquina).
+- La API corriendo en el puerto 3000.
 - JDK 17 y Android SDK. **No hace falta instalarlos a mano**: la primera vez que
   ejecutes `flet build apk`, el CLI de Flet los detecta y, si faltan, los instala
   automaticamente en `%USERPROFILE%\Android\sdk` y `%USERPROFILE%\java`.
@@ -17,18 +19,68 @@ python -m venv .venv
 python -m pip install flet flet-cli
 ```
 
-## Compilar el APK
+## Levantar la API
+
+En el proyecto `app-backend`:
+
+```bash
+npm install
+node seed.mjs      # carga 10 usuarios y 20 articulos de ejemplo
+npm run dev        # sirve la API en http://localhost:3000
+```
+
+Comprobar que responde:
+
+```bash
+curl http://localhost:3000/health
+```
+
+## Cuentas de prueba
+
+| Usuario      | Contrasena  | Rol     |
+| ------------ | ----------- | ------- |
+| `johnd`      | `m38rmF$`   | ADMIN   |
+| `mor_2314`   | `83r5^_`    | AUDITOR |
+| `kevinryan`  | `kev02937@` | USUARIO |
+| `donero`     | `ewedon`    | USUARIO |
+
+Los datos vienen de la FakeStore API, cargados en la base de datos por `seed.mjs`.
+El rol se lee del campo `role` de cada usuario en la API.
+
+## Ejecutar la aplicacion (ventana nativa)
+
+```bash
+python main.py
+```
+
+O como app web en el navegador:
+
+```bash
+FLET_VIEW=web python main.py
+```
+
+## Configurar la direccion de la API
+
+Por defecto la app usa `http://localhost:3000`. Para cambiarla:
+
+```bash
+TIENDA_API_BASE=http://192.168.1.50:3000 python main.py
+```
+
+En el emulador de Android el host se alcanza con `http://10.0.2.2:3000`.
+
+## Compilar el APK (Android)
 
 Desde la raiz del proyecto:
 
-```powershell
-flet build apk
+```bash
+flet build apk --yes
 ```
 
 El APK se genera en:
 
 ```
-build\apk\app-release.apk
+build/apk/app-release.apk
 ```
 
 Opciones utiles:
@@ -45,8 +97,8 @@ clases; cualquier clase resuelta por reflexion/JNI necesita una regla en
 
 ## Instalar en un dispositivo
 
-```powershell
-adb install build\apk\app-release.apk
+```bash
+adb install build/apk/app-release.apk
 ```
 
 ## Configuracion del build

@@ -1,7 +1,7 @@
 """Controlador de administrador (singleton).
 
 Contiene la logica de negocio exclusiva de los administradores:
-- Verificacion del rol de administrador (solo codigos 1 y 2).
+- Verificacion del rol de administrador.
 - Lista de permisos tipicos de un administrador.
 - Gestion (CRUD) de los articulos del catalogo.
 - Estadisticas simples del catalogo para el panel.
@@ -72,7 +72,7 @@ class AdminController:
     # Acceso y permisos
     # ------------------------------------------------------------------
     def es_administrador(self, rol: Role | None) -> bool:
-        """True solo si el rol es de administrador (codigos 1 y 2)."""
+        """True solo si el rol es de administrador."""
         return rol is Role.ADMIN
 
     def permisos_administrador(self) -> list[dict]:

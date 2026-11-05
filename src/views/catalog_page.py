@@ -1,4 +1,4 @@
-"""Vista del catalogo de productos (FakeStore API).
+"""Vista del catalogo de productos.
 
 Carga las categorias y productos de forma asincrona, permite buscar y
 filtrar, muestra el detalle de cada producto en un dialogo y permite
@@ -742,16 +742,21 @@ class CatalogPage:
             descripcion=(campo_descripcion.value or "").strip(),
             categoria=categoria,
             imagen=(campo_imagen.value or "").strip(),
-            calificacion=Calificacion(),
+            calificacion=producto.calificacion if producto is not None else Calificacion(),
         )
 
         # Guardar en un hilo aparte para no bloquear la interfaz.
-        if producto is not None:
-            await asyncio.to_thread(self._admin.actualizar_articulo, nuevo, producto.id)
-            titulo_aviso, mensaje = "Articulo modificado", "Los cambios se guardaron correctamente."
-        else:
-            await asyncio.to_thread(self._admin.crear_articulo, nuevo)
-            titulo_aviso, mensaje = "Articulo creado", "El nuevo articulo se agrego al catalogo correctamente."
+        try:
+            if producto is not None:
+                await asyncio.to_thread(self._admin.actualizar_articulo, nuevo, producto.id)
+                titulo_aviso, mensaje = "Articulo modificado", "Los cambios se guardaron correctamente."
+            else:
+                await asyncio.to_thread(self._admin.crear_articulo, nuevo)
+                titulo_aviso, mensaje = "Articulo creado", "El nuevo articulo se agrego al catalogo correctamente."
+        except Exception as error:
+            error_texto.value = str(error) or "No se pudo guardar el articulo."
+            self._page.update()
+            return
 
         self._cerrar(dialogo)
         dialogo_mensaje(self._page, titulo_aviso, mensaje)

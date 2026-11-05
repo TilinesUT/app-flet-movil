@@ -22,7 +22,7 @@ class AuthController:
     def __new__(cls) -> "AuthController":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance._api = ApiService()   # acceso a la FakeStore API
+            cls._instance._api = ApiService()   # acceso a la API local
             cls._instance._session = Session()  # sesion persistida en disco
         return cls._instance
 
@@ -33,7 +33,7 @@ class AuthController:
 
     @property
     def current_role(self) -> Role | None:
-        """Rol del usuario actual segun su codigo (id)."""
+        """Rol del usuario actual segun el campo role de la API."""
         return self._session.role
 
     @property
