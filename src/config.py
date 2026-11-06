@@ -32,7 +32,7 @@ INFO = "#3B82F6"             # informacion
 # API local (backend Express en el puerto 3000)
 # ---------------------------------------------------------------------------
 # En un emulador de Android se usa http://10.0.2.2:3000 para llegar al host.
-API_BASE = os.environ.get("TIENDA_API_BASE", "http://localhost:3000").rstrip("/")
+API_BASE = os.environ.get("TIENDA_API_BASE", "https://ut-backend-2mmw.onrender.com").rstrip("/")
 API_TIMEOUT = 15  # segundos para cada peticion HTTP
 
 # ---------------------------------------------------------------------------
