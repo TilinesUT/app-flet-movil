@@ -22,6 +22,7 @@ class Role(Enum):
         """Convierte el texto del rol de la API en su enumerado."""
         roles = {
             "ADMIN": Role.ADMIN,
+            "SISTEMAS": Role.ADMIN,  # alias: rol historico usado para el admin
             "AUDITOR": Role.AUDITOR,
             "CLIENT": Role.CLIENT,
             "USUARIO": Role.CLIENT,

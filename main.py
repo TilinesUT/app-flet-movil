@@ -16,6 +16,7 @@ import src.config as config
 from src.controllers.auth_controller import AuthController
 from src.models import Role
 from src.views.admin_page import AdminPage
+from src.views.ai_chat import ChatIA
 from src.views.carts_page import CartsPage
 from src.views.catalog_page import CatalogPage
 from src.views.dashboard_page import DashboardPage
@@ -30,6 +31,13 @@ class App:
         self.page = page
         self.auth = AuthController()
         self._configurar_entorno()
+
+        # Asistente de IA: boton flotante disponible en todas las vistas.
+        self.chat_ia = ChatIA(page)
+        self.page.floating_action_button = self.chat_ia.crear_boton()
+        self.page.floating_action_button_location = (
+            ft.FloatingActionButtonLocation.END_FLOAT
+        )
 
         # Si hay una sesion guardada en disco, se entra directo al perfil.
         if self.auth.restore_session() is not None:

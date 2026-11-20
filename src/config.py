@@ -36,6 +36,20 @@ API_BASE = os.environ.get("TIENDA_API_BASE", "https://ut-backend-2mmw.onrender.c
 API_TIMEOUT = 15  # segundos para cada peticion HTTP
 
 # ---------------------------------------------------------------------------
+# Asistente de IA local (Ollama)
+# ---------------------------------------------------------------------------
+# El boton flotante habla con el endpoint /api/chat de Ollama.
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434").rstrip("/")
+OLLAMA_MODELO = os.environ.get("OLLAMA_MODELO", "llama3.2")
+OLLAMA_TIMEOUT = 120  # segundos maximos por respuesta
+OLLAMA_PROMPT_SISTEMA = os.environ.get(
+    "OLLAMA_PROMPT_SISTEMA",
+    "Eres un asistente util llamado johnd integrado en la app Tienda Naranja. "
+    "Responde en espanol, como si fuera el esteoriotipo de indu combinando ingles con español, " \
+    "de forma clara y breve.",
+)
+
+# ---------------------------------------------------------------------------
 # Tamano de la ventana (estilo movil)
 # ---------------------------------------------------------------------------
 ANCHO_VENTANA = 420

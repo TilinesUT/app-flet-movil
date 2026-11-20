@@ -69,6 +69,38 @@ TIENDA_API_BASE=http://192.168.1.50:3000 python main.py
 
 En el emulador de Android el host se alcanza con `http://10.0.2.2:3000`.
 
+## Asistente de IA (boton flotante)
+
+La app incluye un boton flotante (esquina inferior derecha) que abre un chat
+conectado a **Ollama**. Por defecto usa el modelo `gemma4:31b-cloud`.
+
+1. Arranca el servicio de Ollama en el equipo:
+
+   ```bash
+   ollama serve
+   ```
+
+2. Descarga el modelo (los modelos `-cloud` requieren iniciar sesion):
+
+   ```bash
+   ollama signin
+   ollama pull gemma4:31b-cloud
+   ```
+
+3. Ejecuta la app y pulsa el boton naranja con destellos.
+
+Variables de entorno disponibles:
+
+| Variable                | Valor por defecto              | Descripcion                      |
+| ----------------------- | ------------------------------ | -------------------------------- |
+| `OLLAMA_URL`            | `http://localhost:11434`       | URL del servicio de Ollama       |
+| `OLLAMA_MODELO`         | `gemma4:31b-cloud`             | Modelo que responde el chat      |
+| `OLLAMA_PROMPT_SISTEMA` | Asistente breve en espanol     | Instruccion de sistema opcional  |
+
+En el emulador de Android usa `OLLAMA_URL=http://10.0.2.2:11434`. En un telefono
+real, apunta a la IP de tu PC en la red local y arranca Ollama con
+`OLLAMA_HOST=0.0.0.0 ollama serve` para aceptar conexiones externas.
+
 ## Compilar el APK (Android)
 
 Desde la raiz del proyecto:
